@@ -52,7 +52,7 @@ theorem arithTransExpApproxAboveNeg (d : ℕ) (l u t : ℝ) :
   have tLeU : t ≤ u := LT.lt.le u_bound
   have lLeU : l ≤ u := LE.le.trans lLeT tLeU
   have lLtU : l < u := LT.lt.trans l_bound u_bound
-  /- have taylor := taylor_mean_remainder_lagrange (f := -Real.exp) (x := -t) (x₀ := 0) -/
+  -- have taylor := taylor_mean_remainder_lagrange (f := -Real.exp) (x := -t) (x₀ := 0)
   /-   (hx := neg_pos.mpr t_neg) (hf := exp_contDiffOn d l t) () (hf' := exp_DiffOn d l t l_bound) -/
   have conv_imples: (p l - p t) / (l - t) < (p u - p t) / (u - t) :=
     StrictConvexOn.secant_strict_mono p_conv (a := t) (x := l) (y := u)
@@ -72,4 +72,3 @@ theorem arithTransExpApproxAboveNeg (d : ℕ) (l u t : ℝ) :
 /-   apply And.intro -/
 /-   · admit -/
 /-   · admit -/
-
