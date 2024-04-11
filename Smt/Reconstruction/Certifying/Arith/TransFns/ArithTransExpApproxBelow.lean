@@ -15,10 +15,6 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 
 
-
-#check iteratedDerivWithin_eq_iterate
-
-
 lemma derivWithin_exp_const_mul (hxs : UniqueDiffWithinAt ℝ s x) :
     derivWithin (fun x => Real.exp (c*x)) s x = Real.exp (c*x) * c := by
     have h2 := @differentiableWithinAt_id ℝ _ _ _ (x := x) (s := s)
@@ -51,6 +47,18 @@ theorem iteratedDerivWithin_exp (d : Nat) (h : UniqueDiffOn Real s):
   simpa using this
 
 
+-- This should be generalized
+theorem taylorCoeffWithin_exp_eq (s : Set Real) (hs : 0 ∈ s) (hs1 : UniqueDiffOn ℝ s) :
+  (taylorCoeffWithin Real.exp d s 0) = (taylorCoeffWithin Real.exp d Set.univ 0) := by
+  simp only [taylorCoeffWithin, iteratedDerivWithin_exp d hs1 0 hs]
+  rw [iteratedDerivWithin_exp d uniqueDiffOn_univ 0 (by simp)]
+
+
+-- This should be generalized
+theorem taylorWithinEval_exp_eq (s : Set Real) (hs : 0 ∈ s) (hs1 : UniqueDiffOn ℝ s) :
+  (taylorWithinEval Real.exp d s 0) = (taylorWithinEval Real.exp d Set.univ 0) := by
+  ext x
+  simp only [taylorWithinEval, taylorWithin, taylorCoeffWithin_exp_eq s hs hs1]
 
 
 
@@ -69,14 +77,14 @@ theorem iteratedDerivWithin_exp (d : Nat) (h : UniqueDiffOn Real s):
 
 
 theorem arithTransExpApproxBelow₁ (d n : ℕ) (h : d = 2*n + 1) (hx : 0 < x) :
-    Real.exp x ≥ taylorWithinEval Real.exp d (Set.Icc 0 x) 0 x := by
+    Real.exp x ≥ taylorWithinEval Real.exp d Set.univ 0 x := by
   have := ContDiffOn.exp (f := id) (s := Set.Icc 0 x) (hf := contDiffOn_id) (n := d)
   have h2 := DifferentiableOn.exp (f := id) (s := Set.Ioo 0 x) (hc := differentiableOn_id)
   have h3 := fun x' hx' => (iteratedDerivWithin_exp d (by sorry)) x' ((@Set.Ioo_subset_Icc_self _ _ 0 x) hx')
   have ⟨x', hx', Hx'⟩ := @taylor_mean_remainder_lagrange Real.exp x 0 d hx this
                         (by rw [differentiableOn_congr h3]; exact h2)
   apply sub_nonneg.mp
-  rw [Hx']
+  rw [← taylorWithinEval_exp_eq (Set.Icc 0 x) sorry sorry, Hx']
   apply mul_nonneg _ (by apply inv_nonneg.mpr; simp)
   apply mul_nonneg
     (by rw [iteratedDerivWithin_exp _ (by sorry) _ (by sorry)]; exact le_of_lt (Real.exp_pos x')) (by simp [le_of_lt hx])
@@ -114,20 +122,13 @@ theorem arithTransExpApproxBelow₂' (d n : ℕ) (h : d = 2*n + 1) (hx : 0 < x) 
 #check iteratedDerivWithin_exp_const_mul
 #check Finset.sum_congr
 
-lemma taylorCoeffWithin_exp (d n : ℕ) (h : d = 2*n + 1) (hx : x < 0) :
-  taylorCoeffWithin Real.exp d (Set.Icc (-|x|) 0) (-|x|) = -taylorCoeffWithin (fun x => Real.exp (-x)) d (Set.Icc 0 |x|) |x| := by
-  simp only [taylorCoeffWithin]
-  rw [← iteratedDerivWithin_congr (f := fun i => Real.exp (-i)) (f₁ := fun i => Real.exp (-1*i)) (by sorry) (by sorry) (by sorry) (by sorry)]
-  rw [iteratedDerivWithin_exp_const_mul d]
-  rw [iteratedDerivWithin_exp d (by sorry)]
-  rw [h]
-  norm_num
-  all_goals sorry
 
 example (x : Real) (hx: 0 ≤ x) : 0 ∈ Set.Icc 0 x := by
   exact Set.left_mem_Icc.mpr hx
 
-lemma taylorCoeffWithin_exp' (d n : ℕ) (hx : x < 0) :
+
+-- should be `Set.univ` instead
+lemma taylorCoeffWithin_exp (d n : ℕ) (hx : x < 0) :
   taylorCoeffWithin Real.exp d (Set.Icc (-|x|) 0) 0 = (-1)^d * taylorCoeffWithin (fun x => Real.exp (-x)) d (Set.Icc 0 |x|) 0 := by
   simp only [taylorCoeffWithin]
   rw [← iteratedDerivWithin_congr (f := fun i => Real.exp (-i)) (f₁ := fun i => Real.exp (-1*i)) (by sorry) (by sorry) (by sorry) (Set.left_mem_Icc.mpr (abs_nonneg x))]
@@ -138,9 +139,6 @@ lemma taylorCoeffWithin_exp' (d n : ℕ) (hx : x < 0) :
   simp
 
 
-#check Polynomial.X
-
-#check PolynomialModule.eval ((-1 : Real)) (Polynomial.X ^ (3 : Nat) • (10 : Real): PolynomialModule Real Real)
 
 
 -- lemma Polynomial.eval_neg_x  (p : Polynomial ℝ) (x : ℝ) (C : PolynomialModule Real Real) (d : Nat) :
@@ -152,16 +150,14 @@ lemma taylorCoeffWithin_exp' (d n : ℕ) (hx : x < 0) :
 --     simp
 --     sorry
 
-
-#check PolynomialModule.eval
-
+-- should be `Set.univ` instead
 lemma taylorWithin_exp (d n : ℕ) (h : d = 2*n + 1) (hx : x < 0) :
   taylorWithinEval Real.exp d (Set.Icc (-|x|) 0) 0 (-|x|) =
   taylorWithinEval (fun x => Real.exp (-x)) d (Set.Icc 0 |x|) 0 |x| := by
   unfold taylorWithinEval
   unfold taylorWithin
   rw [Finset.sum_congr rfl
-      (by intro d _; rw [taylorCoeffWithin_exp' d n hx])]
+      (by intro d _; rw [taylorCoeffWithin_exp d n hx])]
   simp
   apply Finset.sum_congr rfl
   intro d _
@@ -173,14 +169,12 @@ lemma taylorWithin_exp (d n : ℕ) (h : d = 2*n + 1) (hx : x < 0) :
 
 
 theorem arithTransExpApproxBelow₂ (d n : ℕ) (h : d = 2*n + 1) (hx : x < 0) :
-    Real.exp x ≥ taylorWithinEval Real.exp d (Set.Icc x 0) 0 x := by
+    Real.exp x ≥ taylorWithinEval Real.exp d Set.univ 0 x := by
   have : x = -|x| := sorry
   rw [this]
   have H := arithTransExpApproxBelow₂' d n h (show 0 < |x| by linarith)
   apply Eq.trans_le _ H
-  rw [taylorWithin_exp d n h hx]
-
-
+  rw [← taylorWithinEval_exp_eq (Set.Icc (-|x|) 0) sorry sorry, taylorWithin_exp d n h hx]
 
 
 
