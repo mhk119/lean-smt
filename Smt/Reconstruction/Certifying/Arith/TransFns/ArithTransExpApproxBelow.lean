@@ -74,20 +74,20 @@ theorem taylorWithinEval_exp_eq (s : Set Real) (hs : 0 ∈ s) (hs1 : UniqueDiffO
 --         simp [iteratedDerivWithin_succ (UniqueDiffOn.uniqueDiffWithinAt (uniqueDiffOn_Icc hx) hx')]
 --       rw [contDiffOn_congr this]
 --       simp [ih]
-
+#check Set.mem_Icc
 
 theorem arithTransExpApproxBelow₁ (d n : ℕ) (h : d = 2*n + 1) (hx : 0 < x) :
     Real.exp x ≥ taylorWithinEval Real.exp d Set.univ 0 x := by
   have := ContDiffOn.exp (f := id) (s := Set.Icc 0 x) (hf := contDiffOn_id) (n := d)
   have h2 := DifferentiableOn.exp (f := id) (s := Set.Ioo 0 x) (hc := differentiableOn_id)
-  have h3 := fun x' hx' => (iteratedDerivWithin_exp d (by sorry)) x' ((@Set.Ioo_subset_Icc_self _ _ 0 x) hx')
+  have h3 := fun x' hx' => (iteratedDerivWithin_exp d (uniqueDiffOn_Icc hx)) x' ((@Set.Ioo_subset_Icc_self _ _ 0 x) hx')
   have ⟨x', hx', Hx'⟩ := @taylor_mean_remainder_lagrange Real.exp x 0 d hx this
                         (by rw [differentiableOn_congr h3]; exact h2)
   apply sub_nonneg.mp
-  rw [← taylorWithinEval_exp_eq (Set.Icc 0 x) sorry sorry, Hx']
+  rw [← taylorWithinEval_exp_eq (Set.Icc 0 x) (by simp [le_of_lt hx]) (uniqueDiffOn_Icc hx), Hx']
   apply mul_nonneg _ (by apply inv_nonneg.mpr; simp)
   apply mul_nonneg
-    (by rw [iteratedDerivWithin_exp _ (by sorry) _ (by sorry)]; exact le_of_lt (Real.exp_pos x')) (by simp [le_of_lt hx])
+    (by rw [iteratedDerivWithin_exp _ (uniqueDiffOn_Icc hx) _ (Set.Ioo_subset_Icc_self hx')]; exact le_of_lt (Real.exp_pos x')) (by simp [le_of_lt hx])
 
 
 theorem iteratedDerivWithin_congr {𝕜 : Type u} [NontriviallyNormedField 𝕜] {F : Type v} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : 𝕜 → F} {f₁ : 𝕜 → F} {x : 𝕜} {s : Set 𝕜} (hs : Set.EqOn f₁ f s) (hx : f₁ x = f x) (hxs : UniqueDiffOn 𝕜 s) (hx2 : x ∈ s) : iteratedDerivWithin n f₁ s x = iteratedDerivWithin n f s x := by
@@ -103,15 +103,31 @@ theorem iteratedDerivWithin_congr {𝕜 : Type u} [NontriviallyNormedField 𝕜]
 example (a b : Real) (ha : a < b) (hx: x ∈ Set.Ioo a b) : x ∈ Set.Icc a b := by
   exact Set.mem_Icc_of_Ioo hx
 
+lemma neg_eq_neg_one_mul_id : (fun (y : Real) => -y) = (fun y => -1) * id := by
+  ext x
+  simp
+
+example (a : Real) : -a = (-1) * a := by exact neg_eq_neg_one_mul a
+
+example (s t : Set Real) (h : s ⊆ t) (f : Real → Real) : DifferentiableOn Real f t → DifferentiableOn Real f s := by
+  intro H
+  exact DifferentiableOn.mono H h
+
+
+#check ContDiffOn.differentiableOn_iteratedDerivWithin
+#check DifferentiableOn
+
 theorem arithTransExpApproxBelow₂' (d n : ℕ) (h : d = 2*n + 1) (hx : 0 < x) :
     Real.exp (-x) ≥ taylorWithinEval (fun x => Real.exp (-x)) d (Set.Icc 0 x) 0 x := by
-    have ⟨x', hx', Hx'⟩ := @taylor_mean_remainder_lagrange (fun x => Real.exp (-x)) x 0 d (by linarith) (by sorry) (by sorry)
+    have H1 := fun m => ContDiffOn.exp (s := Set.Icc 0 x) (f := fun y => -y) (n := m) (hf := by rw [neg_eq_neg_one_mul_id]; apply ContDiffOn.mul contDiffOn_const contDiffOn_id)
+    have H2 := ContDiffOn.differentiableOn_iteratedDerivWithin (s :=  Set.Icc 0 x) (h:= H1 (d + 1)) (f := fun x => Real.exp (-x)) (hmn := by norm_cast; simp) (hs := uniqueDiffOn_Icc hx) (m := d)
+    have ⟨x', hx', Hx'⟩ := @taylor_mean_remainder_lagrange (fun x => Real.exp (-x)) x 0 d (by linarith) (H1 d) (DifferentiableOn.mono H2 Set.Ioo_subset_Icc_self)
     apply sub_nonneg.mp
     rw [Hx']
     apply mul_nonneg _ (by apply inv_nonneg.mpr; simp)
     rw [iteratedDerivWithin_congr _ _ (uniqueDiffOn_Icc hx) (Set.mem_Icc_of_Ioo hx')]
     apply mul_nonneg
-      (by rw [@iteratedDerivWithin_exp_const_mul _ _ (-1) (by sorry) _ (by sorry)]
+      (by rw [@iteratedDerivWithin_exp_const_mul _ _ (-1) (uniqueDiffOn_Icc hx) _ (Set.Ioo_subset_Icc_self hx')]
           simp [le_of_lt _, Real.exp_pos, show d+1 = 2*(n+1) by linarith])
       (by simp [le_of_lt hx])
     · simp [Set.EqOn]
@@ -131,15 +147,16 @@ example (x : Real) (hx: 0 ≤ x) : 0 ∈ Set.Icc 0 x := by
 lemma taylorCoeffWithin_exp (d n : ℕ) (hx : x < 0) :
   taylorCoeffWithin Real.exp d (Set.Icc (-|x|) 0) 0 = (-1)^d * taylorCoeffWithin (fun x => Real.exp (-x)) d (Set.Icc 0 |x|) 0 := by
   simp only [taylorCoeffWithin]
-  rw [← iteratedDerivWithin_congr (f := fun i => Real.exp (-i)) (f₁ := fun i => Real.exp (-1*i)) (by sorry) (by sorry) (by sorry) (Set.left_mem_Icc.mpr (abs_nonneg x))]
-  rw [iteratedDerivWithin_exp_const_mul d _ (by sorry) _ (Set.left_mem_Icc.mpr (abs_nonneg x))]
-  rw [iteratedDerivWithin_exp d (by sorry) _ (by sorry)]
+  rw [← iteratedDerivWithin_congr (f := fun i => Real.exp (-i)) (f₁ := fun i => Real.exp (-1*i)) (by simp [Set.eqOn_refl]) (by simp [Set.eqOn_refl]) (uniqueDiffOn_Icc (by simp [abs_of_neg hx, hx])) (Set.left_mem_Icc.mpr (abs_nonneg x))]
+  rw [iteratedDerivWithin_exp_const_mul d _ (uniqueDiffOn_Icc (by simp [abs_of_neg hx, hx])) _ (Set.left_mem_Icc.mpr (abs_nonneg x))]
+  rw [iteratedDerivWithin_exp d (uniqueDiffOn_Icc (by simp [abs_of_neg hx, hx])) _ (by simp)]
   norm_num
   rw [mul_comm, mul_assoc, ← pow_add, ← mul_two]
   simp
 
 
-
+example {x y z :Real} : x + y = z ↔ x = z - y := by
+  exact Iff.symm eq_sub_iff_add_eq
 
 -- lemma Polynomial.eval_neg_x  (p : Polynomial ℝ) (x : ℝ) (C : PolynomialModule Real Real) (d : Nat) :
 --   ((PolynomialModule.eval (-x)) (Polynomial.X ^ d • C) : Real) = ((PolynomialModule.eval x) (Polynomial.X ^ d • C) : Real) := by
@@ -170,11 +187,11 @@ lemma taylorWithin_exp (d n : ℕ) (h : d = 2*n + 1) (hx : x < 0) :
 
 theorem arithTransExpApproxBelow₂ (d n : ℕ) (h : d = 2*n + 1) (hx : x < 0) :
     Real.exp x ≥ taylorWithinEval Real.exp d Set.univ 0 x := by
-  have : x = -|x| := sorry
+  have : x = -|x| := by simp [abs_of_neg hx]
   rw [this]
   have H := arithTransExpApproxBelow₂' d n h (show 0 < |x| by linarith)
   apply Eq.trans_le _ H
-  rw [← taylorWithinEval_exp_eq (Set.Icc (-|x|) 0) sorry sorry, taylorWithin_exp d n h hx]
+  rw [← taylorWithinEval_exp_eq (Set.Icc (-|x|) 0) (by simp) (uniqueDiffOn_Icc (by simp [abs_of_neg hx, hx])), taylorWithin_exp d n h hx]
 
 
 
