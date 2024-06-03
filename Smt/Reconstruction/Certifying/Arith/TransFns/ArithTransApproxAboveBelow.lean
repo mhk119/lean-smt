@@ -17,9 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 open scoped Nat
 
 open Set
-
-#check neg_lt_neg
-
+#check Nat.le_induction
 theorem iteratedDerivWithin_congr {𝕜 : Type u} [NontriviallyNormedField 𝕜] {F : Type v} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : 𝕜 → F} {f₁ : 𝕜 → F} {x : 𝕜} {s : Set 𝕜} (hs : Set.EqOn f₁ f s) (hx : f₁ x = f x) (hxs : UniqueDiffOn 𝕜 s) (hx2 : x ∈ s) : iteratedDerivWithin n f₁ s x = iteratedDerivWithin n f s x := by
   revert x
   induction' n with n hn
