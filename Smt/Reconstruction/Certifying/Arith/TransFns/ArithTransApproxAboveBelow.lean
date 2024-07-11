@@ -82,29 +82,33 @@ theorem derivWithin_eq_deriv {f : Real → Real} (hf : ContDiff Real ⊤ f) (hs 
   simp only [derivWithin, deriv]
   rw [fderivWithin_eq_fderiv hs (ContDiffAt.differentiableAt (ContDiff.contDiffAt hf) (by simp))]
 
+#check ContDiffOn.differentiableOn
+#check Set.EqOn.iteratedFDerivWithin
+#check UniqueDiffOn.uniqueDiffWithinAt
+
 theorem iteratedDerivWithin_eq_iteratedDeriv {f : Real → Real} (hf : ContDiff Real ⊤ f) (hs : UniqueDiffOn Real s):
   ∀ x ∈ s, iteratedDerivWithin d f s x = iteratedDeriv d f x := by
-  induction' d with d ih
+  induction' d with d hd
   · simp
   · intro x hx
-    have: ∀ y ∈ s, derivWithin f s y = deriv f y := by
-      intro y hy; rw [derivWithin_eq_deriv hf (UniqueDiffOn.uniqueDiffWithinAt hs hy)]
-    rw [iteratedDeriv_succ', iteratedDerivWithin_succ', derivWithin_eq_deriv]
-    rw [this]
+    rw [iteratedDerivWithin_succ (UniqueDiffOn.uniqueDiffWithinAt hs hx), iteratedDeriv_succ, derivWithin, deriv]
+    rw [fderivWithin_congr hd (hd x hx)]
+    rw [fderivWithin_eq_fderiv (UniqueDiffOn.uniqueDiffWithinAt hs hx)]
+    sorry
+    -- apply DifferentiableOn.differentiableAt (ContDiffOn.differentiableOn (by sorry) (by sorry))
+
+
 -- This should be generalized
-theorem taylorCoeffWithin_eq {f : Real → Real} (s : Set Real) (hs : x₀ ∈ s) (hs : UniqueDiffOn ℝ s) (hf : ContDiff Real ⊤ f):
+theorem taylorCoeffWithin_eq {f : Real → Real} (s : Set Real) (hx : x₀ ∈ s) (hs : UniqueDiffOn ℝ s) (hf : ContDiff Real ⊤ f):
   (taylorCoeffWithin f d s x₀) = (taylorCoeffWithin f d Set.univ x₀) := by
   simp only [taylorCoeffWithin]
-  rw [iteratedDerivWithin_exp d uniqueDiffOn_univ 0 (by simp)]
-
+  rw [iteratedDerivWithin_eq_iteratedDeriv hf hs _ hx, iteratedDerivWithin_univ]
 
 -- This should be generalized
-theorem taylorWithinEval_eq (s : Set Real) (hs : 0 ∈ s) (hs1 : UniqueDiffOn ℝ s) :
-  (taylorWithinEval Real.exp d s 0) = (taylorWithinEval Real.exp d Set.univ 0) := by
+theorem taylorWithinEval_eq {f : Real → Real} (s : Set Real) (hs : x₀ ∈ s) (hs1 : UniqueDiffOn ℝ s) (hf : ContDiff Real ⊤ f) :
+  (taylorWithinEval f d s x₀) = (taylorWithinEval f d Set.univ x₀) := by
   ext x
-  simp only [taylorWithinEval, taylorWithin, taylorCoeffWithin_exp_eq s hs hs1]
-
-
+  simp only [taylorWithinEval, taylorWithin, taylorCoeffWithin_eq s hs hs1 hf]
 
 
 theorem taylor_mean_remainder_lagrange₁ {f : ℝ → ℝ} {x x₀ : ℝ} {n : ℕ} (hx : x < x₀)
@@ -115,6 +119,10 @@ theorem taylor_mean_remainder_lagrange₁ {f : ℝ → ℝ} {x x₀ : ℝ} {n : 
   have ⟨x' , hx', H⟩:= taylor_mean_remainder_lagrange (f := fun x => f (-x)) (n := n) (neg_lt_neg hx) (by sorry) (by sorry)
   use -x'
   use (show -x' ∈ Ioo x₀ x by sorry)
-  simp [neg_neg] at H
-  rw [taylorWithinEval_neg] at H
-  sorry
+  rw [neg_neg, taylorWithinEval_eq _ sorry] at H
+  rw [taylorWithinEval_neg, ←taylorWithinEval_eq (Icc x x₀)] at H
+  simp only [neg_neg, sub_neg_eq_add] at H
+  rw [H, iteratedDerivWithin_eq_iteratedDeriv, iteratedDerivWithin_eq_iteratedDeriv]
+  rw [show (fun x => f (-x)) = (fun x => f (-1 * x)) by simp]
+  rw [iteratedDeriv_const_mul _ _ hf, mul_rotate, mul_assoc, ← mul_pow, add_comm (-x) x₀]
+  simp [sub_eq_add_neg]
