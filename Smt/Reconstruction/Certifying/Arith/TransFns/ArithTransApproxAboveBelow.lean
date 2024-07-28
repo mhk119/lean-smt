@@ -104,6 +104,8 @@ theorem taylorWithinEval_eq {f : Real → Real} (s : Set Real) (hs : x₀ ∈ s)
   simp only [taylorWithinEval, taylorWithin, taylorCoeffWithin_eq s hs hs1 hf]
 
 
+
+#check taylor_mean_remainder_lagrange
 theorem taylor_mean_remainder_lagrange₁ {f : ℝ → ℝ} {x x₀ : ℝ} {n : ℕ} (hx : x < x₀)
   (hf : ContDiff ℝ ⊤ f)
   :
