@@ -16,7 +16,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 open scoped Nat
 
-open Set
+open Set Real
 
 theorem iteratedDerivWithin_congr {𝕜 : Type u} [NontriviallyNormedField 𝕜] {F : Type v} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : 𝕜 → F} {f₁ : 𝕜 → F} {x : 𝕜} {s : Set 𝕜} (hs : Set.EqOn f₁ f s) (hx : f₁ x = f x) (hxs : UniqueDiffOn 𝕜 s) (hx2 : x ∈ s) : iteratedDerivWithin n f₁ s x = iteratedDerivWithin n f s x := by
   revert x
@@ -103,10 +103,8 @@ theorem taylorWithinEval_eq {f : Real → Real} (s : Set Real) (hs : x₀ ∈ s)
   ext x
   simp only [taylorWithinEval, taylorWithin, taylorCoeffWithin_eq s hs hs1 hf]
 
-
-
 #check taylor_mean_remainder_lagrange
-theorem taylor_mean_remainder_lagrange₁ {f : ℝ → ℝ} {x x₀ : ℝ} {n : ℕ} (hx : x < x₀)
+theorem taylor_mean_remainder_lagrange₁ {f : ℝ → ℝ} {x x₀ : ℝ} (n : ℕ) (hx : x < x₀)
   (hf : ContDiff ℝ ⊤ f)
   :
   ∃ (x' : ℝ) (_ : x' ∈ Ioo x x₀), f x - taylorWithinEval f n (Icc x x₀) x₀ x =

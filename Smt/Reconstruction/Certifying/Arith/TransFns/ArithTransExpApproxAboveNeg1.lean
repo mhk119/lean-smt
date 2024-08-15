@@ -13,27 +13,23 @@ import Mathlib.Analysis.Calculus.Taylor
 import Mathlib.Data.Complex.Exponential
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
+import Smt.Reconstruction.Certifying.Arith.TransFns.ArithTransExpApproxBelow1
 
 -- import Smt.Reconstruction.Certifying.Arith.TransFns.ArithTransExpApproxBelow
 
+open Set Real
 
 
-theorem expApproxAbove (d k : Nat) (hd : d = 2*k) :
+theorem expApproxAbove (d k : Nat) (hd : d = 2*k) (hx: x < 0) :
   Real.exp x ≤ taylorWithinEval Real.exp d Set.univ 0 x := by
-  sorry
+  have ⟨x', hx', H⟩ := taylor_mean_remainder_lagrange₁ hx contDiff_exp (n := d)
+  rw [taylorWithinEval_eq _ (right_mem_Icc.mpr (le_of_lt hx)) (uniqueDiffOn_Icc hx) contDiff_exp] at H
+  rw [←sub_nonpos, H]
+  rw [iteratedDerivWithin_eq_iteratedDeriv contDiff_exp (uniqueDiffOn_Icc hx) _ (Ioo_subset_Icc_self hx'), iteratedDeriv_exp]
+  apply mul_nonpos_of_nonpos_of_nonneg _ (by apply inv_nonneg.mpr; simp)
+  apply mul_nonpos_of_nonneg_of_nonpos (le_of_lt (Real.exp_pos x'))
+  apply Odd.pow_nonpos _ (by simp[le_of_lt hx]); simp [hd]
 
-example (a b c d : Real) (ha : a/b ≤ c/b) (hb: 0 < b) : 1-(1-c) = c := by
-  exact sub_sub_self 1 c
-
-example (a b c d : Real) (ha : a=d) (hb : c < d):  c < a:= by
-  exact Eq.trans_gt (id ha.symm) hb
-
-
-#check ConvexOn.secant_mono_aux2
-#reduce LinearOrderedField Real
-
-example (a b c : Real) (h : (0 ≤ t)) : a/b*c = a*c/b := by
-  exact div_mul_eq_mul_div a b c
 
 theorem le_of_ConvexOn (f : ℝ → ℝ) (hf : ConvexOn Real Set.univ f) (ht0 : 0 ≤ t) (ht1 : t ≤ 1) (hxz : x < z):
   f (t*x + (1-t)*z) ≤ t*(f x) + (1-t)*(f z) := by
@@ -44,7 +40,7 @@ theorem le_of_ConvexOn (f : ℝ → ℝ) (hf : ConvexOn Real Set.univ f) (ht0 : 
     · have := ConvexOn.secant_mono_aux2 hf (Set.mem_univ x) (Set.mem_univ z)
               (Eq.trans_lt
                 (by ring)
-                ((add_lt_add_iff_left _).mpr ((mul_lt_mul_left (by linarith)).mpr hxz))) (show t*x + (1-t)*z < z by
+                ((Real.add_lt_add_iff_left _).mpr ((mul_lt_mul_left (by linarith)).mpr hxz))) (show t*x + (1-t)*z < z by
                   apply Eq.trans_gt
                         (by ring)
                         ((add_lt_add_iff_right _).mpr ((mul_lt_mul_left (by linarith)).mpr hxz)))
@@ -53,11 +49,7 @@ theorem le_of_ConvexOn (f : ℝ → ℝ) (hf : ConvexOn Real Set.univ f) (ht0 : 
       linarith
 
 
-example (a b : Real) (ha : 0 ≤ a) (hb : 0 ≤ b) (h : a ≤ b) :1-(1-a) = a:= by
-  exact sub_sub_self 1 a
-
-
-theorem arithTransExpApproxAboveNeg (d k : Nat) (hd : d = 2*k) (l u t : ℝ) (ht : l ≤ t ∧ t ≤ u) :
+theorem arithTransExpApproxAboveNeg (d k : Nat) (hd : d = 2*k) (l u t : ℝ) (ht : l ≤ t ∧ t ≤ u) (hu : u < 0):
   let p: ℝ → ℝ := taylorWithinEval Real.exp d Set.univ 0
   Real.exp t ≤ ((p l - p u) / (l - u)) * (t - l) + p l := by
   intro p
@@ -78,5 +70,5 @@ theorem arithTransExpApproxAboveNeg (d k : Nat) (hd : d = 2*k) (l u t : ℝ) (ht
     rw [ht, sub_sub_self, add_comm] at H3
     rw [mul_comm, mul_comm (p l)]
     apply le_trans H3
-    apply add_le_add (mul_le_mul_of_nonneg_left (H1 u) HC.1) (mul_le_mul_of_nonneg_left (H1 l) (by linarith))
-  · simp [hlu, hp, (show t = u by linarith), H1]
+    apply add_le_add (mul_le_mul_of_nonneg_left (H1 u hu) HC.1) (mul_le_mul_of_nonneg_left (H1 l (by linarith)) (by linarith))
+  · simp [hlu, hp, (show t = u by linarith), H1, hu]
