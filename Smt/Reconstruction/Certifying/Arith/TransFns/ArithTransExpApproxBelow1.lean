@@ -1,14 +1,8 @@
 import Smt.Reconstruction.Certifying.Arith.TransFns.ArithTransApproxAboveBelow
-import Mathlib.Analysis.Calculus.Taylor
-import Mathlib.Data.Complex.Exponential
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 
 #check sub_nonneg
 open Set Real
-
-example (a b c : Real) (ha : a -b ≥ c) : a ≥ c+b := by
-    exact le_sub_iff_add_le.mp ha
 
 theorem iteratedDeriv_exp (n : Nat) : iteratedDeriv n exp = exp := by
     induction' n with n hn
