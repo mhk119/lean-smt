@@ -12,6 +12,7 @@ https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html#_CPPv4N4cvc58inte
 
 import Mathlib.Data.Complex.Exponential
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import Smt.Reconstruction.Certifying.Arith.TransFns.ArithTransSineTangentZero
 
 open Real
 
@@ -21,4 +22,3 @@ theorem arithTransSineTangentPi : ∀ (t : ℝ),
   apply And.intro
   · intro ht; admit
   · intro ht; admit
-    
