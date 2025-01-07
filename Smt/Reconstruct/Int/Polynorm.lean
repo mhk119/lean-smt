@@ -82,7 +82,7 @@ theorem foldr_assoc {g : β → α} (z1 z2 : α) :
     simp only [List.foldr_cons, ih, assoc]
 
 end
--- Can be generazlized.
+-- Can be generalized.
 theorem foldl_mul_insert {ctx : Context} :
   List.foldl (fun z a => z * (ctx a)) 1 (mul.insert y ys) =
   (ctx y) * List.foldl (fun z a => z * (ctx a)) 1 ys := by
@@ -176,7 +176,7 @@ theorem denote_neg {p : Polynomial} : p.neg.denote ctx = -p.denote ctx := by
   induction p with
   | nil => simp
   | cons m p ih =>
-    simp only [List.foldl_cons, Int.add_comm 0, Monomial.foldl_assoc Int.add_assoc,Int.neg_add, ←ih, List.map, Monomial.denote_neg]
+    simp only [List.foldl_cons, Int.add_comm 0, Monomial.foldl_assoc Int.add_assoc, Int.neg_add, ←ih, List.map, Monomial.denote_neg]
 
 theorem denote_add {p q : Polynomial} : (p.add q).denote ctx = p.denote ctx + q.denote ctx := by
   simp only [denote, add]
