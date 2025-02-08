@@ -9,15 +9,17 @@ theorem iteratedDeriv_exp (n : Nat) : iteratedDeriv n exp = exp := by
     · simp
     · simp [iteratedDeriv_succ, hn]
 
+theorem DifferentiableOn_iteratedDerivWithin {f : ℝ → ℝ} (hf : ContDiff ℝ ⊤ f) (hx : a < b) :
+    DifferentiableOn ℝ (iteratedDerivWithin d f (Icc a b)) (Ioo a b) := by
+    apply DifferentiableOn.mono _ Set.Ioo_subset_Icc_self
+    apply ContDiffOn.differentiableOn_iteratedDerivWithin (n := d + 1) _ (by norm_cast; simp) (uniqueDiffOn_Icc hx)
+    apply ContDiff.contDiffOn ((contDiff_top.mp hf) _)
+
 
 -- can definitely be shortened. same proof below
 theorem arithTransExpApproxBelow₁ (d n : ℕ) (h : d = 2*n + 1) (hx : 0 < x) :
     Real.exp x ≥ taylorWithinEval Real.exp d Set.univ 0 x := by
-    have h2 : DifferentiableOn ℝ (iteratedDerivWithin d rexp (Icc 0 x)) (Ioo 0 x) := by
-        apply DifferentiableOn.mono _ Set.Ioo_subset_Icc_self
-        apply ContDiffOn.differentiableOn_iteratedDerivWithin (n := d + 1) _ (by norm_cast; simp) (uniqueDiffOn_Icc hx)
-        apply ContDiff.contDiffOn ((contDiff_top.mp contDiff_exp) _)
-    have ⟨x', hx', H⟩ := taylor_mean_remainder_lagrange hx (ContDiff.contDiffOn (s := Icc 0 x) (n := d) contDiff_exp) h2
+    have ⟨x', hx', H⟩ := taylor_mean_remainder_lagrange hx (ContDiff.contDiffOn (s := Icc 0 x) (n := d) contDiff_exp) (DifferentiableOn_iteratedDerivWithin (contDiff_exp) hx)
     rw [taylorWithinEval_eq _ (left_mem_Icc.mpr (le_of_lt hx)) (uniqueDiffOn_Icc hx) contDiff_exp] at H
     rw [ge_iff_le, ←sub_nonneg, H]
     rw [iteratedDerivWithin_eq_iteratedDeriv contDiff_exp (uniqueDiffOn_Icc hx) _ (Ioo_subset_Icc_self hx'), iteratedDeriv_exp]
