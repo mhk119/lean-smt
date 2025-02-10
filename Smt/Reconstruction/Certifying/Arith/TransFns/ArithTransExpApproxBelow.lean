@@ -1,211 +1,39 @@
-/-
-Copyright (c) 2021-2023 by the authors listed in the file AUTHORS and their
-institutional affiliations. All rights reserved.
-Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Harun Khan
--/
-
-/-
-Implementation of:
-https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html#_CPPv4N4cvc58internal6PfRule28ARITH_TRANS_EXP_APPROX_BELOWE
--/
-import Mathlib.Analysis.Calculus.Taylor
-import Mathlib.Data.Complex.Exponential
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Smt.Reconstruction.Certifying.Arith.TransFns.ArithTransApproxAboveBelow
 
 
+#check sub_nonneg
+open Set Real
 
-lemma derivWithin_exp_const_mul (hxs : UniqueDiffWithinAt ℝ s x) :
-    derivWithin (fun x => Real.exp (c*x)) s x = Real.exp (c*x) * c := by
-    have h2 := @differentiableWithinAt_id ℝ _ _ _ (x := x) (s := s)
-    have := derivWithin_id x s hxs
-    simp [id] at *
-    rw [derivWithin_exp (DifferentiableWithinAt.const_mul h2 c) hxs, derivWithin_const_mul hxs]
-    simp [this]
-    exact h2
+theorem iteratedDeriv_exp (n : Nat) : iteratedDeriv n exp = exp := by
+    induction' n with n hn
+    · simp
+    · simp [iteratedDeriv_succ, hn]
 
-
-theorem iteratedDerivWithin_exp_const_mul (d : Nat) (c : Real) (h : UniqueDiffOn Real s) :
-  ∀ x ∈ s, iteratedDerivWithin d (fun x => Real.exp (c*x)) s x = c^d * Real.exp (c*x) := by
-  induction' d with d hd
-  <;> intro x hx
-  <;> have := UniqueDiffOn.uniqueDiffWithinAt h hx
-  · simp [iteratedDerivWithin_succ this, iteratedDerivWithin_zero, derivWithin_exp_const_mul this]
-  · rw [iteratedDerivWithin_succ this]
-    rw [derivWithin_congr hd (hd x hx)]
-    rw [derivWithin_const_mul this]
-    rw [derivWithin_exp_const_mul this, pow_succ]
-    ring
-    have hf := DifferentiableWithinAt.const_mul (@differentiableWithinAt_id ℝ _ _ _ (x := x) (s := s)) c
-    have h2 := DifferentiableWithinAt.exp (x := x) (s := s) (f := fun x => c*x) (hf := hf)
-    simp [h2]
-
-theorem iteratedDerivWithin_exp (d : Nat) (h : UniqueDiffOn Real s):
-  ∀ x ∈ s, iteratedDerivWithin d Real.exp s x = Real.exp x := by
-  intro x hx
-  have := iteratedDerivWithin_exp_const_mul d 1 h x hx
-  simpa using this
+theorem DifferentiableOn_iteratedDerivWithin {f : ℝ → ℝ} (hf : ContDiff ℝ ⊤ f) (hx : a < b) :
+    DifferentiableOn ℝ (iteratedDerivWithin d f (Icc a b)) (Ioo a b) := by
+    apply DifferentiableOn.mono _ Set.Ioo_subset_Icc_self
+    apply ContDiffOn.differentiableOn_iteratedDerivWithin (n := d + 1) _ (by norm_cast; simp) (uniqueDiffOn_Icc hx)
+    apply ContDiff.contDiffOn ((contDiff_top.mp hf) _)
 
 
--- This should be generalized
-theorem taylorCoeffWithin_exp_eq (s : Set Real) (hs : 0 ∈ s) (hs1 : UniqueDiffOn ℝ s) :
-  (taylorCoeffWithin Real.exp d s 0) = (taylorCoeffWithin Real.exp d Set.univ 0) := by
-  simp only [taylorCoeffWithin, iteratedDerivWithin_exp d hs1 0 hs]
-  rw [iteratedDerivWithin_exp d uniqueDiffOn_univ 0 (by simp)]
-
-
--- This should be generalized
-theorem taylorWithinEval_exp_eq (s : Set Real) (hs : 0 ∈ s) (hs1 : UniqueDiffOn ℝ s) :
-  (taylorWithinEval Real.exp d s 0) = (taylorWithinEval Real.exp d Set.univ 0) := by
-  ext x
-  simp only [taylorWithinEval, taylorWithin, taylorCoeffWithin_exp_eq s hs hs1]
-
-
-
--- theorem contDiffOn_exp (hx : 0 < x) : ContDiffOn ℝ (n : Nat) Real.exp (Set.Icc 0 x) := by
---   induction' n with n ih
---   · simp [Real.continuousOn_exp]
---   · rw [contDiffOn_succ_iff_derivWithin (uniqueDiffOn_Icc hx)]
---     constructor
---     · simp [DifferentiableOn.exp]
---     · have : ∀ x' ∈ Set.Icc 0 x, derivWithin Real.exp (Set.Icc 0 x) x' = Real.exp x' := by
---         intro x' hx'
---         rw [← iteratedDerivWithin_exp 1 x x' hx hx']
---         simp [iteratedDerivWithin_succ (UniqueDiffOn.uniqueDiffWithinAt (uniqueDiffOn_Icc hx) hx')]
---       rw [contDiffOn_congr this]
---       simp [ih]
-#check Set.mem_Icc
-
+-- can definitely be shortened. same proof below
 theorem arithTransExpApproxBelow₁ (d n : ℕ) (h : d = 2*n + 1) (hx : 0 < x) :
     Real.exp x ≥ taylorWithinEval Real.exp d Set.univ 0 x := by
-  have := ContDiffOn.exp (f := id) (s := Set.Icc 0 x) (hf := contDiffOn_id) (n := d)
-  have h2 := DifferentiableOn.exp (f := id) (s := Set.Ioo 0 x) (hc := differentiableOn_id)
-  have h3 := fun x' hx' => (iteratedDerivWithin_exp d (uniqueDiffOn_Icc hx)) x' ((@Set.Ioo_subset_Icc_self _ _ 0 x) hx')
-  have ⟨x', hx', Hx'⟩ := @taylor_mean_remainder_lagrange Real.exp x 0 d hx this
-                        (by rw [differentiableOn_congr h3]; exact h2)
-  apply sub_nonneg.mp
-  rw [← taylorWithinEval_exp_eq (Set.Icc 0 x) (by simp [le_of_lt hx]) (uniqueDiffOn_Icc hx), Hx']
-  apply mul_nonneg _ (by apply inv_nonneg.mpr; simp)
-  apply mul_nonneg
-    (by rw [iteratedDerivWithin_exp _ (uniqueDiffOn_Icc hx) _ (Set.Ioo_subset_Icc_self hx')]; exact le_of_lt (Real.exp_pos x')) (by simp [le_of_lt hx])
-
-
-theorem iteratedDerivWithin_congr {𝕜 : Type u} [NontriviallyNormedField 𝕜] {F : Type v} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : 𝕜 → F} {f₁ : 𝕜 → F} {x : 𝕜} {s : Set 𝕜} (hs : Set.EqOn f₁ f s) (hx : f₁ x = f x) (hxs : UniqueDiffOn 𝕜 s) (hx2 : x ∈ s) : iteratedDerivWithin n f₁ s x = iteratedDerivWithin n f s x := by
-  revert x
-  induction' n with n hn
-  <;> intro x hx hx2
-  · simp [hx]
-  · simp only [iteratedDerivWithin_succ (UniqueDiffOn.uniqueDiffWithinAt hxs hx2)]
-    simp only [Set.EqOn] at hs
-    rw [derivWithin_congr (by simp [Set.EqOn]; intro y hy; exact hn (hs hy) hy) (hn hx hx2)]
-
-
-example (a b : Real) (ha : a < b) (hx: x ∈ Set.Ioo a b) : x ∈ Set.Icc a b := by
-  exact Set.mem_Icc_of_Ioo hx
-
-lemma neg_eq_neg_one_mul_id : (fun (y : Real) => -y) = (fun y => -1) * id := by
-  ext x
-  simp
-
-example (a : Real) : -a = (-1) * a := by exact neg_eq_neg_one_mul a
-
-example (s t : Set Real) (h : s ⊆ t) (f : Real → Real) : DifferentiableOn Real f t → DifferentiableOn Real f s := by
-  intro H
-  exact DifferentiableOn.mono H h
-
-
-#check ContDiffOn.differentiableOn_iteratedDerivWithin
-#check DifferentiableOn
-
-theorem arithTransExpApproxBelow₂' (d n : ℕ) (h : d = 2*n + 1) (hx : 0 < x) :
-    Real.exp (-x) ≥ taylorWithinEval (fun x => Real.exp (-x)) d (Set.Icc 0 x) 0 x := by
-    have H1 := fun m => ContDiffOn.exp (s := Set.Icc 0 x) (f := fun y => -y) (n := m) (hf := by rw [neg_eq_neg_one_mul_id]; apply ContDiffOn.mul contDiffOn_const contDiffOn_id)
-    have H2 := ContDiffOn.differentiableOn_iteratedDerivWithin (s :=  Set.Icc 0 x) (h:= H1 (d + 1)) (f := fun x => Real.exp (-x)) (hmn := by norm_cast; simp) (hs := uniqueDiffOn_Icc hx) (m := d)
-    have ⟨x', hx', Hx'⟩ := @taylor_mean_remainder_lagrange (fun x => Real.exp (-x)) x 0 d (by linarith) (H1 d) (DifferentiableOn.mono H2 Set.Ioo_subset_Icc_self)
-    apply sub_nonneg.mp
-    rw [Hx']
+    have ⟨x', hx', H⟩ := taylor_mean_remainder_lagrange hx (ContDiff.contDiffOn (s := Icc 0 x) (n := d) contDiff_exp) (DifferentiableOn_iteratedDerivWithin (contDiff_exp) hx)
+    rw [taylorWithinEval_eq _ (left_mem_Icc.mpr (le_of_lt hx)) (uniqueDiffOn_Icc hx) contDiff_exp] at H
+    rw [ge_iff_le, ←sub_nonneg, H]
+    rw [iteratedDerivWithin_eq_iteratedDeriv contDiff_exp (uniqueDiffOn_Icc hx) _ (Ioo_subset_Icc_self hx'), iteratedDeriv_exp]
     apply mul_nonneg _ (by apply inv_nonneg.mpr; simp)
-    rw [iteratedDerivWithin_congr _ _ (uniqueDiffOn_Icc hx) (Set.mem_Icc_of_Ioo hx')]
-    apply mul_nonneg
-      (by rw [@iteratedDerivWithin_exp_const_mul _ _ (-1) (uniqueDiffOn_Icc hx) _ (Set.Ioo_subset_Icc_self hx')]
-          simp [le_of_lt _, Real.exp_pos, show d+1 = 2*(n+1) by linarith])
-      (by simp [le_of_lt hx])
-    · simp [Set.EqOn]
-    · simp
+    apply mul_nonneg (le_of_lt (Real.exp_pos x')) (by simp [le_of_lt hx])
 
 
-#check Polynomial.eval₂_congr
-#check iteratedDerivWithin_exp_const_mul
-#check Finset.sum_congr
-
-
-example (x : Real) (hx: 0 ≤ x) : 0 ∈ Set.Icc 0 x := by
-  exact Set.left_mem_Icc.mpr hx
-
-
--- should be `Set.univ` instead
-lemma taylorCoeffWithin_exp (d n : ℕ) (hx : x < 0) :
-  taylorCoeffWithin Real.exp d (Set.Icc (-|x|) 0) 0 = (-1)^d * taylorCoeffWithin (fun x => Real.exp (-x)) d (Set.Icc 0 |x|) 0 := by
-  simp only [taylorCoeffWithin]
-  rw [← iteratedDerivWithin_congr (f := fun i => Real.exp (-i)) (f₁ := fun i => Real.exp (-1*i)) (by simp [Set.eqOn_refl]) (by simp [Set.eqOn_refl]) (uniqueDiffOn_Icc (by simp [abs_of_neg hx, hx])) (Set.left_mem_Icc.mpr (abs_nonneg x))]
-  rw [iteratedDerivWithin_exp_const_mul d _ (uniqueDiffOn_Icc (by simp [abs_of_neg hx, hx])) _ (Set.left_mem_Icc.mpr (abs_nonneg x))]
-  rw [iteratedDerivWithin_exp d (uniqueDiffOn_Icc (by simp [abs_of_neg hx, hx])) _ (by simp)]
-  norm_num
-  rw [mul_comm, mul_assoc, ← pow_add, ← mul_two]
-  simp
-
-
-example {x y z :Real} : x + y = z ↔ x = z - y := by
-  exact Iff.symm eq_sub_iff_add_eq
-
--- lemma Polynomial.eval_neg_x  (p : Polynomial ℝ) (x : ℝ) (C : PolynomialModule Real Real) (d : Nat) :
---   ((PolynomialModule.eval (-x)) (Polynomial.X ^ d • C) : Real) = ((PolynomialModule.eval x) (Polynomial.X ^ d • C) : Real) := by
---   simp [eval, eval₂]
---   apply Finset.sum_congr
---   · sorry
---   · intro y hy
---     simp
---     sorry
-
--- should be `Set.univ` instead
-lemma taylorWithin_exp (d n : ℕ) (h : d = 2*n + 1) (hx : x < 0) :
-  taylorWithinEval Real.exp d (Set.Icc (-|x|) 0) 0 (-|x|) =
-  taylorWithinEval (fun x => Real.exp (-x)) d (Set.Icc 0 |x|) 0 |x| := by
-  unfold taylorWithinEval
-  unfold taylorWithin
-  rw [Finset.sum_congr rfl
-      (by intro d _; rw [taylorCoeffWithin_exp d n hx])]
-  simp
-  apply Finset.sum_congr rfl
-  intro d _
-  set C := (PolynomialModule.lsingle ℝ 0) ((-1) ^ d * taylorCoeffWithin (fun x => Real.exp (-x)) d (Set.Icc 0 |x|) 0)
-  set C' := (PolynomialModule.lsingle ℝ 0) (taylorCoeffWithin (fun x => Real.exp (-x)) d (Set.Icc 0 |x|) 0)
-  simp only [PolynomialModule.eval_smul, Polynomial.eval_pow, Polynomial.eval_X]
-  simp [← mul_pow, ← mul_assoc]
-
-
-
+-- see the last line. this probably holds for any function.
 theorem arithTransExpApproxBelow₂ (d n : ℕ) (h : d = 2*n + 1) (hx : x < 0) :
     Real.exp x ≥ taylorWithinEval Real.exp d Set.univ 0 x := by
-  have : x = -|x| := by simp [abs_of_neg hx]
-  rw [this]
-  have H := arithTransExpApproxBelow₂' d n h (show 0 < |x| by linarith)
-  apply Eq.trans_le _ H
-  rw [← taylorWithinEval_exp_eq (Set.Icc (-|x|) 0) (by simp) (uniqueDiffOn_Icc (by simp [abs_of_neg hx, hx])), taylorWithin_exp d n h hx]
-
-
-
-
-
-
-
-
-/- example (x : ℝ) : x < 0 → -x > 0 := by intro h; library_search -/
-
-
-/- #check Convex -/
-/- example : StrictConvexOn ℝ  (Set.Icc 1 2) Real.exp := by -/
-/-   simp [StrictConvexOn] -/
-/-   apply And.intro -/
-/-   · admit -/
-/-   · admit -/
+    have ⟨x', hx', H⟩ := taylor_mean_remainder_lagrange₁ hx contDiff_exp (n := d)
+    rw [taylorWithinEval_eq _ (right_mem_Icc.mpr (le_of_lt hx)) (uniqueDiffOn_Icc hx) contDiff_exp] at H
+    rw [ge_iff_le, ←sub_nonneg, H]
+    rw [iteratedDerivWithin_eq_iteratedDeriv contDiff_exp (uniqueDiffOn_Icc hx) _ (Ioo_subset_Icc_self hx'), iteratedDeriv_exp]
+    apply mul_nonneg _ (by apply inv_nonneg.mpr; simp)
+    apply mul_nonneg (le_of_lt (Real.exp_pos x'))
+    apply Even.pow_nonneg; rw [h, show 2*n + 1 + 1 = 2*(n+1) by ring]; simp
