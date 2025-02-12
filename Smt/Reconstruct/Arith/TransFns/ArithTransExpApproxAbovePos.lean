@@ -11,7 +11,7 @@ https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html#_CPPv4N4cvc58inte
 -/
 
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
-import Smt.Reconstruction.Certifying.Arith.TransFns.ArithTransExpApproxAboveNeg
+import Smt.Reconst.Arith.TransFns.ArithTransExpApproxAboveNeg
 
 -- import Smt.Reconstruction.Certifying.Arith.TransFns.ArithTransExpApproxBelow
 
