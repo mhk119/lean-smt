@@ -15,8 +15,6 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Smt.Reconstruct.Arith.TransFns.ArithTransExpApproxBelow
 
-import Smt.Reconstruct.Arith.TransFns.ArithTransExpApproxBelow
-
 namespace Smt.Reconstruct.Arith
 
 open Set Real
@@ -31,8 +29,8 @@ theorem expApproxAbove (d k : Nat) (hd : d = 2*k) (hx: x < 0) :
   apply mul_nonpos_of_nonneg_of_nonpos (le_of_lt (Real.exp_pos x'))
   apply Odd.pow_nonpos _ (by simp[le_of_lt hx]); simp [hd]
 
-
-theorem le_of_ConvexOn (f : ℝ → ℝ) (hf : ConvexOn Real Set.univ f) (ht0 : 0 ≤ t) (ht1 : t ≤ 1) (hxz : x ≤ z):
+theorem le_of_ConvexOn (f : ℝ → ℝ) (hf : ConvexOn Real s f) (hx : x ∈ s) (hz : z ∈ s)
+                        (ht0 : 0 ≤ t) (ht1 : t ≤ 1) (hxz : x ≤ z):
   f (t*x + (1-t)*z) ≤ t*(f x) + (1-t)*(f z) := by
   cases' eq_or_lt_of_le hxz with hxz hxz
   · rw [hxz]; ring_nf; simp
@@ -40,7 +38,7 @@ theorem le_of_ConvexOn (f : ℝ → ℝ) (hf : ConvexOn Real Set.univ f) (ht0 : 
     · simp [ht0]
     · cases' eq_or_gt_of_le ht1 with ht1 ht1
       · simp [← ht1]
-      · have := ConvexOn.secant_mono_aux2 hf (Set.mem_univ x) (Set.mem_univ z)
+      · have := ConvexOn.secant_mono_aux2 hf hx hz
                 (Eq.trans_lt
                   (by ring)
                   ((Real.add_lt_add_iff_left _).mpr ((mul_lt_mul_left (by linarith)).mpr hxz))) (show t*x + (1-t)*z < z by
@@ -65,13 +63,13 @@ theorem le_secant (p : ℝ → ℝ) (ht : l ≤ t ∧ t ≤ u) :
   apply div_le_one_of_le₀ (by linarith) (by linarith)
 
 -- write a theorem here where if f ≤ p then f t ≤ secant...
-theorem le_convex_of_le {l u t : ℝ} {f p : ℝ → ℝ} (ht : l ≤ t ∧ t ≤ u) (hl : f l ≤ p l) (hu : f u ≤ p u) (hf : ConvexOn Real Set.univ f) :
+theorem le_convex_of_le {l u t : ℝ} {f p : ℝ → ℝ} (ht : l ≤ t ∧ t ≤ u) (hl : f l ≤ p l) (hu : f u ≤ p u) (hf : ConvexOn Real s f) (hl1 : l ∈ s) (hu1 : u ∈ s) :
   f t ≤ ((p l - p u) / (l - u)) * (t - l) + p l:= by
   have ⟨hp1, hC1, hC2⟩ := le_secant p ht
   rw [hp1]
   set C := (t-l)/(u-l)
   cases' (lt_or_eq_of_le (le_trans ht.1 ht.2)) with hlu hlu
-  · have H3 := le_of_ConvexOn f hf (show 0 ≤ 1 - C by linarith) (by linarith) (le_of_lt hlu)
+  · have H3 := le_of_ConvexOn f hf hl1 hu1 (show 0 ≤ 1 - C by linarith) (by linarith) (le_of_lt hlu)
     have htt : (1-C) * l + (1-(1-C)) * u = t := by
       simp only [sub_sub_cancel, C]
       field_simp [show u -l ≠ 0 by linarith]
@@ -82,6 +80,8 @@ theorem le_convex_of_le {l u t : ℝ} {f p : ℝ → ℝ} (ht : l ≤ t ∧ t �
   · simp [hlu, hl, hu, (show t = u by linarith)]
     linarith
 
+#check Set.mem_univ
+
 theorem arithTransExpApproxAboveNeg (d k : Nat) (hd : d = 2*k) (l u t : ℝ) (ht : l ≤ t ∧ t ≤ u) (hu : u < 0):
   let p: ℝ → ℝ := taylorWithinEval Real.exp d Set.univ 0
   Real.exp t ≤ ((p l - p u) / (l - u)) * (t - l) + p l := by
@@ -90,6 +90,6 @@ theorem arithTransExpApproxAboveNeg (d k : Nat) (hd : d = 2*k) (l u t : ℝ) (ht
   apply le_convex_of_le ht
         (by rw [hp]; exact expApproxAbove d k hd (lt_of_le_of_lt (le_trans ht.1 ht.2) hu))
         (by rw [hp]; exact expApproxAbove d k hd hu)
-        convexOn_exp
+        convexOn_exp (Set.mem_univ _) (Set.mem_univ _)
 
 end Smt.Reconstruct.Arith

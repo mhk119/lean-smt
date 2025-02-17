@@ -111,4 +111,4 @@ theorem arithTransExpApproxAbovePos (l u t : ℝ) (ht : l ≤ t ∧ t ≤ u)
   Real.exp t ≤ ((p d l - p d u) / (l - u)) * (t - l) + p d l := by
   intro r _
   have h1 := expApproxAbovePos (lt_of_lt_of_le hl (le_trans ht.1 ht.2)) hd
-  apply le_convex_of_le ht (h1 l (le_trans ht.1 ht.2) hl) (h1 u (by simp) (by linarith)) convexOn_exp
+  apply le_convex_of_le ht (h1 l (le_trans ht.1 ht.2) hl) (h1 u (by simp) (by linarith)) convexOn_exp (Set.mem_univ _) (Set.mem_univ _)
