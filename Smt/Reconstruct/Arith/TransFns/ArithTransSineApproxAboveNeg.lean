@@ -8,19 +8,6 @@ open Set Real
 
 namespace Smt.Reconstruct.Arith
 
-
-lemma succ_mod (n : Nat) (hm : 1 < m) (hn : n % m + 1 < m): (Nat.succ n) % m = k + 1 ↔ n % m = k := by
-  suffices goal : (Nat.succ n) % m = n%m + 1 by simp [goal]
-  rw [Nat.succ_eq_add_one, Nat.add_mod, Nat.mod_eq_of_lt hm, Nat.mod_eq_of_lt hn]
-
-
-
-lemma succ_mod' (n : Nat) (hm : 1 < m) (hn : n % m + 1 < m): n % m = k ↔ (Nat.succ n) % m = k + 1 := by
-  suffices goal : (Nat.succ n) % m = n%m + 1 by simp [goal]
-  rw [Nat.succ_eq_add_one, Nat.add_mod, Nat.mod_eq_of_lt hm, Nat.mod_eq_of_lt hn]
-
-
-
 theorem iteratedDeriv_sin_cos (n : Nat) :
   (iteratedDeriv n sin =
     if n % 4 = 0 then sin else
@@ -35,12 +22,11 @@ theorem iteratedDeriv_sin_cos (n : Nat) :
   induction' n with n ih
   · simp [iteratedDeriv]
   · simp [ih.1, ih.2, iteratedDeriv_succ']
-    by_cases h : n % 4 + 1 < 4
-
-    simp [h, succ_mod' n (show 1 < 4 by simp) h]
-    norm_num
-
-    rw [succ_mod' n (show 1 < 4 by norm_num)]
+    have :=  Nat.mod_lt n (show 4 > 0 by decide)
+    interval_cases hn : n % 4
+    <;> simp [hn, Nat.add_mod]
+    <;> ext
+    <;> simp [iteratedDeriv_neg, ih]
 
 -- #check strictConcaveOn_sin_Icc
 -- #check neg_convexOn_iff
@@ -66,7 +52,7 @@ theorem convexOn_sin_Icc : ConvexOn ℝ (Icc (-π) 0) sin := by
 
   -- apply ConvexOn.of_strictConvexOn_Ioo
   -- apply strictConvexOn_sin_Ioo
-#check mem_Ioo
+
 theorem sineApproxAboveNeg (d k : Nat) (hd : d = 4*k + 3) (hx : x < 0) (hx2 : -π ≤ x):
   let p : ℕ → ℝ → ℝ := fun d => taylorWithinEval Real.sin d Set.univ 0
   sin x ≤ p d x := by
