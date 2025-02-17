@@ -80,8 +80,6 @@ theorem le_convex_of_le {l u t : ℝ} {f p : ℝ → ℝ} (ht : l ≤ t ∧ t �
   · simp [hlu, hl, hu, (show t = u by linarith)]
     linarith
 
-#check Set.mem_univ
-
 theorem arithTransExpApproxAboveNeg (d k : Nat) (hd : d = 2*k) (l u t : ℝ) (ht : l ≤ t ∧ t ≤ u) (hu : u < 0):
   let p: ℝ → ℝ := taylorWithinEval Real.exp d Set.univ 0
   Real.exp t ≤ ((p l - p u) / (l - u)) * (t - l) + p l := by
