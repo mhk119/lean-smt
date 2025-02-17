@@ -2,7 +2,7 @@
 Copyright (c) 2021-2023 by the authors listed in the file AUTHORS and their
 institutional affiliations. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Harun Khan
+Authors: Harun Khan, Tomaz Gomes
 -/
 
 
@@ -36,30 +36,17 @@ theorem iteratedDeriv_sin_cos (n : Nat) :
     <;> ext
     <;> simp [iteratedDeriv_neg, ih]
 
--- #check strictConcaveOn_sin_Icc
--- #check neg_convexOn_iff
+theorem concaveOn_sin_Icc : ConcaveOn ℝ (Icc 0 π) sin := StrictConcaveOn.concaveOn strictConcaveOn_sin_Icc
 
--- theorem jjsj {𝕜 : Type u_1} {E : Type u_2} [OrderedRing 𝕜] [AddCommGroup E] [Module 𝕜 E] {s : Set E} :
--- Convex 𝕜 s ↔ Convex 𝕜 (-s) := sorry
+theorem strictConvexOn_sin_Icc : StrictConvexOn ℝ (Icc (- π) 0) sin := by
+  apply strictConvexOn_of_deriv2_pos (convex_Icc _ _) continuousOn_sin fun x hx => ?_
+  rw [interior_Icc] at hx
+  simp only [mem_Ioo] at hx
+  simp
+  have ⟨hx₁, hx₂⟩ := hx
+  exact Real.sin_neg_of_neg_of_neg_pi_lt hx₂ hx₁
 
--- example {s : Set ℝ} {f : ℝ → ℝ}: StrictConvexOn ℝ s f ↔ StrictConvexOn ℝ (-s) f := by
---   simp [StrictConvexOn, neg_convexOn_iff]
---   simp [← jjsj]
-
-theorem convexOn_sin_Icc : ConvexOn ℝ (Icc (-π) 0) sin := by
-  apply StrictConvexOn.convexOn
-  rw [← neg_strictConcaveOn_iff]
-  rw [← neg_strictConvexOn_iff]
-  simp only [neg_neg]
-  sorry
-
-  --
-  -- apply strictConvexOn_of_deriv2_pos (convex_Icc _ _) continuousOn_sin fun x hx => ?_
-  -- rw [interior_Icc] at hx
-  -- simp [sin_pos_of_mem_Ioo hx]
-
-  -- apply ConvexOn.of_strictConvexOn_Ioo
-  -- apply strictConvexOn_sin_Ioo
+theorem convexOn_sin_Icc : ConvexOn ℝ (Icc (- π) 0) sin := StrictConvexOn.convexOn strictConvexOn_sin_Icc
 
 theorem sineApproxAboveNeg (d k : Nat) (hd : d = 4*k + 3) (hx : x < 0) (hx2 : -π ≤ x):
   let p : ℕ → ℝ → ℝ := fun d => taylorWithinEval Real.sin d Set.univ 0
