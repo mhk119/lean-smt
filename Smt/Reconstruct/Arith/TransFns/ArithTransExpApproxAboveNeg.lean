@@ -58,7 +58,7 @@ theorem eq_secant (l t u : ℝ) (p : ℝ → ℝ) :
   rw [sub_mul, sub_add_eq_add_sub, ← mul_one (p l), mul_assoc, add_sub_assoc, ←mul_sub (p l)]
   rw [one_mul, mul_one, mul_comm C, mul_comm (1-C)]
 
-lemma div_between_nonneg {t l u : ℝ} (h : l ≤ t ∧ t ≤ u) :
+lemma div_nonneg_le_one {t l u : ℝ} (h : l ≤ t ∧ t ≤ u) :
   let C := (t-l)/(u-l)
   0 ≤ C ∧ C ≤ 1 := by
   constructor
@@ -70,8 +70,6 @@ lemma one_sub_div_sub (l t u : Real) (h : l ≠ u):
   rw [one_sub_div (sub_ne_zero_of_ne h), ← neg_div_neg_eq]
   field_simp
 
-
-
 -- write a theorem here where if f ≤ p then f t ≤ secant...
 theorem le_convex_of_le {l u t : ℝ} {f p : ℝ → ℝ} (ht : l ≤ t ∧ t ≤ u)
                         (hl : f l ≤ p l) (hu : f u ≤ p u) (hf : ConvexOn Real s f) (hl1 : l ∈ s) (hu1 : u ∈ s) :
@@ -79,7 +77,7 @@ theorem le_convex_of_le {l u t : ℝ} {f p : ℝ → ℝ} (ht : l ≤ t ∧ t �
   have hp1 := eq_secant l t u p
   rw [hp1]
   set C := (t-l)/(u-l)
-  have ⟨hC1, hC2⟩ := div_between_nonneg ht
+  have ⟨hC1, hC2⟩ := div_nonneg_le_one ht
   cases' (lt_or_eq_of_le (le_trans ht.1 ht.2)) with hlu hlu
   · have H3 := le_of_ConvexOn f hf hl1 hu1 (show 0 ≤ 1 - C by linarith) (by linarith) (le_of_lt hlu)
     have htt : (1-C) * l + (1-(1-C)) * u = t := by

@@ -37,6 +37,9 @@ theorem taylorSin_neg (x : Real):
   dsimp [p, taylorWithinEval, taylorWithin, PolynomialModule.eval, taylorCoeffWithin]
   sorry
 
+theorem div_mul_neg (a b c : ℝ) : a/(-b)*(-c) = a/b*c := by
+  ring
+
 theorem arithTransSineApproxBelowPos (d k : Nat) (hd : d = 4*k + 3) (l u t : ℝ)
                                      (ht : l ≤ t ∧ t ≤ u) (hu : u ≤ π) (hl : 0 < l) :
   let p: ℝ → ℝ := taylorWithinEval Real.sin d Set.univ 0
@@ -45,6 +48,10 @@ theorem arithTransSineApproxBelowPos (d k : Nat) (hd : d = 4*k + 3) (l u t : ℝ
   have hp : ∀ x, p x = taylorWithinEval Real.sin d Set.univ 0 x := by simp
   rw [hp, hp, ← neg_neg t, ← neg_neg l, ← neg_neg u, sin_neg, taylorSin_neg (-l), taylorSin_neg (-u), ←neg_le_neg_iff]
   simp only [neg_neg, sub_neg_eq_add, neg_add_rev]
-  rw [←neg_mul, neg_div', neg_add, neg_neg, add_comm]
-  -- apply arithTransSineApproxAboveNeg d k hd
-  sorry
+  rw [←neg_mul, neg_div', neg_add, neg_neg, add_comm, ←hp, ←hp]
+  rw [show t- l = -(-t -(-l)) by ring, show l-u = -(-l-(-u)) by ring, div_mul_neg]
+  apply le_convex_of_le' ⟨by linarith, by linarith⟩
+        (by rw [hp]; exact sineApproxAboveNeg d k hd (by linarith) (by linarith))
+        (by rw [hp]; exact sineApproxAboveNeg d k hd (by linarith) (by linarith))
+        convexOn_sin_Icc (mem_Icc.mpr ⟨by linarith, by linarith⟩)
+                         (mem_Icc.mpr ⟨by linarith, by linarith⟩)

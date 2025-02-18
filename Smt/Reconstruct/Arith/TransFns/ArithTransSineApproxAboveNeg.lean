@@ -62,7 +62,7 @@ theorem sineApproxAboveNeg (d k : Nat) (hd : d = 4*k + 3) (hx : x < 0) (hx2 : -�
   apply mul_nonpos_of_nonpos_of_nonneg (Real.sin_nonpos_of_nonnpos_of_neg_pi_le (le_of_lt (mem_Ioo.mp hx').2) (le_trans hx2 (le_of_lt (mem_Ioo.mp hx').1)))
   apply Even.pow_nonneg (by rw [even_iff_two_dvd]; omega)
 
-theorem arithTransSineApproxAboveNeg (d k : Nat) (hd : d = 4*k + 3) (l u t : ℝ)
+theorem arithTransSineApproxAboveNeg (d k : Nat) (hd : d = 4*k + 3)
                                      (ht : l ≤ t ∧ t ≤ u) (hu : u < 0) (hl : -π ≤ l) :
   let p: ℝ → ℝ := taylorWithinEval Real.sin d Set.univ 0
   Real.sin t ≤ ((p l - p u) / (l - u)) * (t - l) + p l := by

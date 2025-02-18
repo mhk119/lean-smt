@@ -82,7 +82,7 @@ theorem le_self_sq (n : Nat) : n ≤ n*n := by
 --       linarith [Nat.le_mul_self (ceil x)]
 --     apply mul_lt_mul (by apply lt_of_le_of_lt h2 (by simp)) (by norm_cast at *; simp [le_of_lt h1]) (by simp [hx]) (by norm_cast; simp)
 
-theorem expApproxAbovePos {x : Real} (hx : 0 < x) (h1 : x^(d+1) < Nat.factorial (d+1)):
+theorem expApproxAbovePos {x : Real} (h1 : x^(d+1) < Nat.factorial (d+1)):
   let r : ℕ → ℝ → ℝ := fun d => (fun t => (1-t^(d+1)/(d+1)!))
   let p : ℕ → ℝ → ℝ := fun d => ((taylorWithinEval Real.exp d Set.univ 0) / (r d))
   ∀ x' ≤ x, 0 < x' → Real.exp x' ≤ p d x' := by
@@ -110,5 +110,5 @@ theorem arithTransExpApproxAbovePos (l u t : ℝ) (ht : l ≤ t ∧ t ≤ u)
   let p : ℕ → ℝ → ℝ := fun d => ((taylorWithinEval Real.exp d Set.univ 0) / (r d))
   Real.exp t ≤ ((p d l - p d u) / (l - u)) * (t - l) + p d l := by
   intro r _
-  have h1 := expApproxAbovePos (lt_of_lt_of_le hl (le_trans ht.1 ht.2)) hd
+  have h1 := expApproxAbovePos hd
   apply le_convex_of_le ht (h1 l (le_trans ht.1 ht.2) hl) (h1 u (by simp) (by linarith)) convexOn_exp (Set.mem_univ _) (Set.mem_univ _)
