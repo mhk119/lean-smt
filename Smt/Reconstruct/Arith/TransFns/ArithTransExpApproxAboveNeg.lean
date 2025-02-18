@@ -49,25 +49,37 @@ theorem le_of_ConvexOn (f : ℝ → ℝ) (hf : ConvexOn Real s f) (hx : x ∈ s)
         rw [div_le_div_iff_of_pos_right (by linarith), div_le_iff₀ (by linarith)] at this
         linarith
 
-theorem le_secant (p : ℝ → ℝ) (ht : l ≤ t ∧ t ≤ u) :
+theorem eq_secant (l t u : ℝ) (p : ℝ → ℝ) :
   let C := (t-l)/(u-l)
-  ((p l - p u) / (l - u)) * (t - l) + p l = C * p u + (1 - C) * p l ∧ 0 ≤ C ∧ C ≤ 1 := by
+  ((p l - p u) / (l - u)) * (t - l) + p l = C * p u + (1 - C) * p l := by
   intro C
   have hc : C = (t-l)/(u-l) := by simp
   rw [← neg_div_neg_eq, neg_sub, neg_sub, mul_comm_div]
-  constructor
   rw [sub_mul, sub_add_eq_add_sub, ← mul_one (p l), mul_assoc, add_sub_assoc, ←mul_sub (p l)]
   rw [one_mul, mul_one, mul_comm C, mul_comm (1-C)]
-  rw [hc]
-  simp only [true_and, div_nonneg (sub_nonneg.mpr ht.1) (sub_nonneg.mpr (le_trans ht.1 ht.2))]
-  apply div_le_one_of_le₀ (by linarith) (by linarith)
+
+lemma div_between_nonneg {t l u : ℝ} (h : l ≤ t ∧ t ≤ u) :
+  let C := (t-l)/(u-l)
+  0 ≤ C ∧ C ≤ 1 := by
+  constructor
+  · apply div_nonneg (sub_nonneg.mpr h.1) (sub_nonneg.mpr (le_trans h.1 h.2))
+  · apply div_le_one_of_le₀ (by linarith) (by linarith)
+
+lemma one_sub_div_sub (l t u : Real) (h : l ≠ u):
+  1 -(t-u)/(l-u) = (t-l)/(u-l) := by
+  rw [one_sub_div (sub_ne_zero_of_ne h), ← neg_div_neg_eq]
+  field_simp
+
+
 
 -- write a theorem here where if f ≤ p then f t ≤ secant...
-theorem le_convex_of_le {l u t : ℝ} {f p : ℝ → ℝ} (ht : l ≤ t ∧ t ≤ u) (hl : f l ≤ p l) (hu : f u ≤ p u) (hf : ConvexOn Real s f) (hl1 : l ∈ s) (hu1 : u ∈ s) :
+theorem le_convex_of_le {l u t : ℝ} {f p : ℝ → ℝ} (ht : l ≤ t ∧ t ≤ u)
+                        (hl : f l ≤ p l) (hu : f u ≤ p u) (hf : ConvexOn Real s f) (hl1 : l ∈ s) (hu1 : u ∈ s) :
   f t ≤ ((p l - p u) / (l - u)) * (t - l) + p l:= by
-  have ⟨hp1, hC1, hC2⟩ := le_secant p ht
+  have hp1 := eq_secant l t u p
   rw [hp1]
   set C := (t-l)/(u-l)
+  have ⟨hC1, hC2⟩ := div_between_nonneg ht
   cases' (lt_or_eq_of_le (le_trans ht.1 ht.2)) with hlu hlu
   · have H3 := le_of_ConvexOn f hf hl1 hu1 (show 0 ≤ 1 - C by linarith) (by linarith) (le_of_lt hlu)
     have htt : (1-C) * l + (1-(1-C)) * u = t := by
@@ -79,6 +91,15 @@ theorem le_convex_of_le {l u t : ℝ} {f p : ℝ → ℝ} (ht : l ≤ t ∧ t �
     apply add_le_add (mul_le_mul_of_nonneg_left hu hC1) (mul_le_mul_of_nonneg_left hl (by linarith))
   · simp [hlu, hl, hu, (show t = u by linarith)]
     linarith
+
+theorem le_convex_of_le' {l u t : ℝ} {f p : ℝ → ℝ} (ht : l ≤ t ∧ t ≤ u)
+                         (hl : f l ≤ p l) (hu : f u ≤ p u) (hf : ConvexOn Real s f) (hl1 : l ∈ s) (hu1 : u ∈ s) :
+  f t ≤ ((p u - p l) / (u - l)) * (t - u) + p u:= by
+  cases' ne_or_eq l u with h h
+  · rw [eq_secant, add_comm, one_sub_div_sub l t u h, ←one_sub_div_sub u t l (Ne.symm h)]
+    rw [← eq_secant]
+    apply le_convex_of_le ht hl hu hf hl1 hu1
+  · simp [hl, hu, (show t = u by linarith)]
 
 theorem arithTransExpApproxAboveNeg (d k : Nat) (hd : d = 2*k) (l u t : ℝ) (ht : l ≤ t ∧ t ≤ u) (hu : u < 0):
   let p: ℝ → ℝ := taylorWithinEval Real.exp d Set.univ 0
