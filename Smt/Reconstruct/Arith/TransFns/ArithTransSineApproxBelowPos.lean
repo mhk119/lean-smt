@@ -29,12 +29,6 @@ theorem sineApproxBelowPos (d k : Nat) (hd : d = 4*k + 3)
   apply mul_nonneg _ (by apply inv_nonneg.mpr; simp)
   apply mul_nonneg (Real.sin_nonneg_of_nonneg_of_le_pi (le_of_lt ((mem_Ioo.mp hx').1)) (le_trans (le_of_lt (mem_Ioo.mp hx').2) hx2)) (pow_nonneg (le_of_lt hx) _)
 
-example {f g : Nat → Real} (h : ∀ i, f i = 0) (k : Nat) : ∑ i ∈ Finset.range k, f i = 0 := by
-  exact Finset.sum_eq_zero fun x a => h x
-
-
-#check iteratedDerivWithin_eq_iteratedDeriv
-
 theorem iteratedDerivWithin_sin_eq_zero_of_even (j : ℕ) (hj : Even j) :
   iteratedDerivWithin j sin univ 0 = 0 := by
   have := Nat.mod_lt j (show 4 > 0 by decide)
