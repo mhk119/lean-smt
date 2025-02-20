@@ -23,7 +23,7 @@ theorem DifferentiableOn_iteratedDerivWithin {f : ℝ → ℝ} (hf : ContDiff �
     apply ContDiff.contDiffOn (by apply ContDiff.of_le hf (by norm_cast; simp))
 
 -- can definitely be shortened. same proof below
-theorem arithTransExpApproxBelow₁ (d n : ℕ) (_ : d = 2*n + 1) (hx : 0 < x) :
+theorem arithTransExpApproxBelowPos (d n : ℕ) (_ : d = 2*n + 1) (hx : 0 < x) :
     Real.exp x ≥ taylorWithinEval Real.exp d Set.univ 0 x := by
     have h2 : DifferentiableOn ℝ (iteratedDerivWithin d rexp (Icc 0 x)) (Ioo 0 x) := by
         apply DifferentiableOn.mono _ Set.Ioo_subset_Icc_self
@@ -38,7 +38,7 @@ theorem arithTransExpApproxBelow₁ (d n : ℕ) (_ : d = 2*n + 1) (hx : 0 < x) :
 
 
 -- see the last line. this probably holds for any function.
-theorem arithTransExpApproxBelow₂ (d n : ℕ) (h : d = 2*n + 1) (hx : x < 0) :
+theorem arithTransExpApproxBelowNeg (d n : ℕ) (h : d = 2*n + 1) (hx : x < 0) :
     Real.exp x ≥ taylorWithinEval Real.exp d Set.univ 0 x := by
     have ⟨x', hx', H⟩ := taylor_mean_remainder_lagrange₁ hx contDiff_exp (n := d)
     rw [taylorWithinEval_eq _ (right_mem_Icc.mpr (le_of_lt hx)) (uniqueDiffOn_Icc hx) contDiff_exp] at H
