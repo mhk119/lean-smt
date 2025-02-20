@@ -52,10 +52,6 @@ theorem taylorSin_neg (x : Real):
   · rw [Odd.neg_pow h]
     simp
 
-
-theorem div_mul_neg (a b c : ℝ) : a/(-b)*(-c) = a/b*c := by
-  ring
-
 theorem arithTransSineApproxBelowPos (d k : Nat) (hd : d = 4*k + 3) (l u t : ℝ)
                                      (ht : l ≤ t ∧ t ≤ u) (hu : u ≤ π) (hl : 0 < l) :
   let p: ℝ → ℝ := taylorWithinEval Real.sin d Set.univ 0
