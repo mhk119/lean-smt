@@ -12,23 +12,6 @@ open Set Real
 
 namespace Smt.Reconstruct.Arith
 
-
-theorem sineApproxBelowPos (d k : Nat) (hd : d = 4*k + 3)
-                           (hx : 0 < x) (hx2 : x ≤ π) :
-  let p : ℕ → ℝ → ℝ := fun d => taylorWithinEval Real.sin d Set.univ 0
-  p d x ≤ sin x:= by
-  intro p
-  have ⟨x', hx', H⟩ := taylor_mean_remainder_lagrange (n := d) hx
-                        (ContDiff.contDiffOn contDiff_sin)
-                        (DifferentiableOn_iteratedDerivWithin (contDiff_sin) hx)
-  rw [taylorWithinEval_eq _ (left_mem_Icc.mpr (le_of_lt hx)) (uniqueDiffOn_Icc hx) (contDiff_sin)] at H
-  rw [←sub_nonneg, H]
-  rw [iteratedDerivWithin_eq_iteratedDeriv contDiff_sin (uniqueDiffOn_Icc hx) _ (Ioo_subset_Icc_self hx')]
-  have : (d+1)%4 = 0 := by simp [hd, Nat.add_mod]
-  simp only [this, iteratedDeriv_sin_cos, reduceIte, three_ne_zero, sub_zero, show 3 ≠ 1 by decide, show 3 ≠ 0 by decide, show 3 ≠ 2 by decide]
-  apply mul_nonneg _ (by apply inv_nonneg.mpr; simp)
-  apply mul_nonneg (Real.sin_nonneg_of_nonneg_of_le_pi (le_of_lt ((mem_Ioo.mp hx').1)) (le_trans (le_of_lt (mem_Ioo.mp hx').2) hx2)) (pow_nonneg (le_of_lt hx) _)
-
 theorem iteratedDerivWithin_sin_eq_zero_of_even (j : ℕ) (hj : Even j) :
   iteratedDerivWithin j sin univ 0 = 0 := by
   have := Nat.mod_lt j (show 4 > 0 by decide)
@@ -51,6 +34,15 @@ theorem taylorSin_neg (x : Real):
     simp
   · rw [Odd.neg_pow h]
     simp
+
+--not needed
+theorem sineApproxBelowPos (d k : Nat) (hd : d = 4*k + 3)
+                           (hx : 0 < x) (hx2 : x ≤ π) :
+  let p : ℕ → ℝ → ℝ := fun d => taylorWithinEval Real.sin d Set.univ 0
+  p d x ≤ sin x:= by
+  intro p; dsimp [p]
+  rw [← neg_neg x, sin_neg, taylorSin_neg, neg_le_neg_iff]
+  apply sineApproxAboveNeg d k hd (by linarith) (by linarith)
 
 theorem arithTransSineApproxBelowPos (d k : Nat) (hd : d = 4*k + 3) (l u t : ℝ)
                                      (ht : l ≤ t ∧ t ≤ u) (hu : u ≤ π) (hl : 0 < l) :
