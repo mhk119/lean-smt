@@ -15,6 +15,13 @@ package smt where
   precompileModules := true
 
 @[default_target]
+lean_lib Definitions
+
+@[default_target]
+lean_exe Main where
+  supportInterpreter := true
+
+/- @[default_target] -/
 lean_lib Smt
 
 lean_lib SmtTest where

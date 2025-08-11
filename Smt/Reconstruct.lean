@@ -12,8 +12,8 @@ import Smt.Reconstruct.Builtin
 import Smt.Reconstruct.Int
 import Smt.Reconstruct.Prop
 import Smt.Reconstruct.Quant
-import Smt.Reconstruct.Rat
--- import Smt.Reconstruct.Real
+--import Smt.Reconstruct.Rat
+import Smt.Reconstruct.Real
 import Smt.Reconstruct.UF
 
 namespace Smt
@@ -27,8 +27,8 @@ def sortRcons := [
   (Prop.reconstructPropSort, ``Prop.reconstructPropSort),
   (UF.reconstructUS, ``UF.reconstructUS),
   (Int.reconstructIntSort, ``Int.reconstructIntSort),
-  (Rat.reconstructRatSort,``Rat.reconstructRatSort),
-  -- (Real.reconstructRealSort, ``Real.reconstructRealSort),
+  --(Rat.reconstructRatSort,``Rat.reconstructRatSort),
+  --(Real.reconstructRealSort, ``Real.reconstructRealSort),
   (BitVec.reconstructBitVecSort, ``BitVec.reconstructBitVecSort)
 ]
 
@@ -38,8 +38,8 @@ def termRcons := [
   (UF.reconstructUF, ``UF.reconstructUF),
   (Quant.reconstructQuant, ``Quant.reconstructQuant),
   (Int.reconstructInt, ``Int.reconstructInt),
-  (Rat.reconstructRat, ``Rat.reconstructRat),
-  -- (Real.reconstructReal, ``Real.reconstructReal),
+  --(Rat.reconstructRat, ``Rat.reconstructRat),
+  --(Real.reconstructReal, ``Real.reconstructReal),
   (BitVec.reconstructBitVec, ``BitVec.reconstructBitVec)
 ]
 
@@ -49,8 +49,8 @@ def proofRcons := [
   (UF.reconstructUFProof, ``UF.reconstructUFProof),
   (Quant.reconstructQuantProof, ``Quant.reconstructQuantProof),
   (Int.reconstructIntProof, ``Int.reconstructIntProof),
-  (Rat.reconstructRatProof, ``Rat.reconstructRatProof),
-  -- (Real.reconstructRealProof, ``Real.reconstructRealProof),
+  --(Rat.reconstructRatProof, ``Rat.reconstructRatProof),
+  --(Real.reconstructRealProof, ``Real.reconstructRealProof),
   (BitVec.reconstructBitVecProof, ``BitVec.reconstructBitVecProof)
 ]
 
