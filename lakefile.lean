@@ -12,7 +12,7 @@ require mathlib from
   git "https://github.com/leanprover-community/mathlib4.git" @ "v4.20.0-rc5"
 
 package smt where
-  precompileModules := true
+  /- precompileModules := true -/
 
 @[default_target]
 lean_lib Definitions
