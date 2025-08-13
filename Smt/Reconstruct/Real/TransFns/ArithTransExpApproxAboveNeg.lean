@@ -15,11 +15,11 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Data.Complex.Exponential
 
-import Smt.Reconstruct.Arith.TransFns.ArithTransExpApproxBelow
-
-namespace Smt.Reconstruct.Arith
+import Smt.Reconstruct.Real.TransFns.ArithTransExpApproxBelow
 
 open Set Real
+
+namespace Smt.Reconstruct.Real.TransFns
 
 theorem expApproxAbove (d k : Nat) (hd : d = 2*k) (hx: x < 0) :
   Real.exp x ≤ taylorWithinEval Real.exp d Set.univ 0 x := by
@@ -55,7 +55,7 @@ theorem le_secant (p : ℝ → ℝ) (ht : l ≤ t ∧ t ≤ u) :
   let C := (t-l)/(u-l)
   ((p l - p u) / (l - u)) * (t - l) + p l = C * p u + (1 - C) * p l ∧ 0 ≤ C ∧ C ≤ 1 := by
   intro C
-  have hc : C = (t-l)/(u-l) := by simp
+  have hc : C = (t-l)/(u-l) := rfl
   rw [← neg_div_neg_eq, neg_sub, neg_sub, mul_comm_div]
   constructor
   rw [sub_mul, sub_add_eq_add_sub, ← mul_one (p l), mul_assoc, add_sub_assoc, ←mul_sub (p l)]
@@ -86,10 +86,10 @@ theorem arithTransExpApproxAboveNeg (d k : Nat) (hd : d = 2*k) (l u t : ℝ) (ht
   let p: ℝ → ℝ := taylorWithinEval Real.exp d Set.univ 0
   Real.exp t ≤ ((p l - p u) / (l - u)) * (t - l) + p l := by
   intro p
-  have hp : ∀ x, p x = taylorWithinEval Real.exp d Set.univ 0 x := by simp
+  have hp : ∀ x, p x = taylorWithinEval Real.exp d Set.univ 0 x := fun _ => rfl
   apply le_convex_of_le ht
         (by rw [hp]; exact expApproxAbove d k hd (lt_of_le_of_lt (le_trans ht.1 ht.2) hu))
         (by rw [hp]; exact expApproxAbove d k hd hu)
         convexOn_exp (Set.mem_univ _) (Set.mem_univ _)
 
-end Smt.Reconstruct.Arith
+end Smt.Reconstruct.Real.TransFns

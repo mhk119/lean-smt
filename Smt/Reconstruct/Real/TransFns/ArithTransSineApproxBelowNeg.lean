@@ -10,11 +10,11 @@ Implementation of:
 https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html#_CPPv4N4cvc58internal6PfRule33ARITH_TRANS_SINE_APPROX_BELOW_NEGE
 -/
 
-import Smt.Reconstruct.Arith.TransFns.ArithTransSineApproxBelowPos
+import Smt.Reconstruct.Real.TransFns.ArithTransSineApproxBelowPos
 
 open Set Real
 
-namespace Smt.Reconstruct.Arith
+namespace Smt.Reconstruct.Real.TransFns
 
 theorem arithTransSineApproxBelowNeg (d k : Nat) (hd : d = 4*k + 1) (hx : x < 0) (hx2 : -π ≤ x):
   let p : ℕ → ℝ → ℝ := fun d => taylorWithinEval Real.sin d Set.univ 0
@@ -30,3 +30,5 @@ theorem arithTransSineApproxBelowNeg (d k : Nat) (hd : d = 4*k + 1) (hx : x < 0)
   simp only [Pi.neg_apply, neg_mul, Left.nonneg_neg_iff]
   apply mul_nonpos_of_nonpos_of_nonneg (Real.sin_nonpos_of_nonnpos_of_neg_pi_le (le_of_lt (mem_Ioo.mp hx').2) (le_trans hx2 (le_of_lt (mem_Ioo.mp hx').1)))
   apply Even.pow_nonneg (by rw [even_iff_two_dvd]; omega)
+
+end Smt.Reconstruct.Real.TransFns

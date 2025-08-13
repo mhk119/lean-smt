@@ -13,13 +13,13 @@ https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html#_CPPv4N4cvc58inte
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Convex.SpecificFunctions.Deriv
 
-import Smt.Reconstruct.Arith.TransFns.ArithTransExpApproxAbovePos
-import Smt.Reconstruct.Arith.TransFns.ArithTransExpApproxAboveNeg
-import Smt.Reconstruct.Arith.TransFns.Utils
+import Smt.Reconstruct.Real.TransFns.ArithTransExpApproxAbovePos
+import Smt.Reconstruct.Real.TransFns.ArithTransExpApproxAboveNeg
+import Smt.Reconstruct.Real.TransFns.Utils
 
 open Set Real
 
-namespace Smt.Reconstruct.Arith
+namespace Smt.Reconstruct.Real.TransFns
 
 theorem sineApproxAboveNeg (d k : Nat) (hd : d = 4*k + 3) (hx : x < 0) (hx2 : -π ≤ x):
   let p : ℕ → ℝ → ℝ := fun d => taylorWithinEval Real.sin d Set.univ 0
@@ -41,9 +41,11 @@ theorem arithTransSineApproxAboveNeg (d k : Nat) (hd : d = 4*k + 3) (l u t : ℝ
   let p: ℝ → ℝ := taylorWithinEval Real.sin d Set.univ 0
   Real.sin t ≤ ((p l - p u) / (l - u)) * (t - l) + p l := by
   intro p
-  have hp : ∀ x, p x = taylorWithinEval Real.sin d Set.univ 0 x := by simp
+  have hp : ∀ x, p x = taylorWithinEval Real.sin d Set.univ 0 x := fun _ => rfl
   apply le_convex_of_le ht
         (by rw [hp]; exact sineApproxAboveNeg d k hd (by linarith) hl)
         (by rw [hp]; exact sineApproxAboveNeg d k hd hu (by linarith))
         convexOn_sin_Icc (mem_Icc.mpr ⟨hl, by linarith⟩)
                          (mem_Icc.mpr ⟨by linarith, le_of_lt hu⟩)
+
+end Smt.Reconstruct.Real.TransFns

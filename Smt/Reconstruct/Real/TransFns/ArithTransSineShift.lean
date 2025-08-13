@@ -13,9 +13,9 @@ https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html#_CPPv4N4cvc58inte
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Data.Real.StarOrdered
 
-namespace Smt.Reconstruct.Arith
-
 open Real
+
+namespace Smt.Reconstruct.Real.TransFns
 
 def norm' (x : Real) : Prop := ((-Real.pi) ≤ x) ∧ (x ≤ Real.pi)
 
@@ -94,4 +94,4 @@ theorem arithTransSineShift₁ : ∀ (x : Real) ,
     P x s y :=
   fun x => epsilon_spec (epsilon_spec (arithTransSineShift₀ x))
 
-end Smt.Reconstruct.Arith
+end Smt.Reconstruct.Real.TransFns

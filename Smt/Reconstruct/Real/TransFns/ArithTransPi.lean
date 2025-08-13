@@ -17,12 +17,12 @@ import Mathlib.Data.Real.Pi.Bounds
 
 import Smt.Reconstruct.Util
 
-namespace Smt.Reconstruct.Arith
-
 open Lean
 open Elab Tactic Meta
 
 open Real
+
+namespace Smt.Reconstruct.Real.TransFns
 
 def expr_pi_upper : Expr :=
   mkApp5 (Expr.const ``OfScientific.ofScientific [Level.zero])
@@ -101,4 +101,4 @@ syntax (name := arithTransPi) "arithTransPi" term "," term : tactic
 example : 3.1415926535 < Real.pi ∧ Real.pi < 3.1415926536 := by
   arithTransPi 3.1415926535 , 3.1415926536
 
-end Smt.Reconstruct.Arith
+end Smt.Reconstruct.Real.TransFns

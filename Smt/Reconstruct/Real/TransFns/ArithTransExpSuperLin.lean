@@ -14,7 +14,7 @@ import Mathlib.Data.Complex.Exponential
 
 import Smt.Reconstruct.Prop
 
-namespace Smt.Reconstruct.Arith
+namespace Smt.Reconstruct.Real.TransFns
 
 open Smt.Reconstruct.Prop
 
@@ -29,4 +29,4 @@ theorem arithTransExpSuperLin (t : ℝ) :
   simp at h
   exact arithTransExpSuperLin' t h
 
-end Smt.Reconstruct.Arith
+end Smt.Reconstruct.Real.TransFns

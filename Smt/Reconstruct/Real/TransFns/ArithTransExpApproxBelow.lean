@@ -10,11 +10,11 @@ Implementation of:
 https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html#_CPPv4N4cvc58internal6PfRule28ARITH_TRANS_EXP_APPROX_BELOWE
 -/
 
-import Smt.Reconstruct.Arith.TransFns.Utils
-
-namespace Smt.Reconstruct.Arith
+import Smt.Reconstruct.Real.TransFns.Utils
 
 open Set Real
+
+namespace Smt.Reconstruct.Real.TransFns
 
 theorem iteratedDeriv_exp (n : Nat) : iteratedDeriv n exp = exp := by
     induction' n with n hn
@@ -53,5 +53,5 @@ theorem arithTransExpApproxBelow₂ (d n : ℕ) (h : d = 2*n + 1) (hx : x < 0) :
     apply mul_nonneg (le_of_lt (Real.exp_pos x'))
     apply Even.pow_nonneg; rw [h, show 2*n + 1 + 1 = 2*(n+1) by ring]; simp
 
-end Smt.Reconstruct.Arith
+end Smt.Reconstruct.Real.TransFns
 

@@ -2,7 +2,7 @@
 Copyright (c) 2021-2023 by the authors listed in the file AUTHORS and their
 institutional affiliations. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Abdalrhman Mohamed
+Authors: Abdalrhman Mohamed, Tomaz Gomes Mascarenhas
 -/
 
 import Qq
@@ -89,6 +89,10 @@ def reconstructReal : TermReconstructor := fun t => do match t.getKind with
   | .IS_INTEGER =>
     let x : Q(Real) ← reconstructTerm t[0]!
     return q($x = ⌊$x⌋)
+  /- | .EXPONENTIAL => -/
+  /-   if t.getSort.isInteger then return none -/
+  /-   let x : Expr ← reconstructTerm t[0]! -/
+  /-   return mkApp (mkConst `Real.exp) x -/
   | _ => return none
 where
   mkRealLit (n : Nat) : Q(Real) := match h : n with

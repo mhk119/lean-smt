@@ -13,11 +13,11 @@ https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html#_CPPv4N4cvc58inte
 import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Data.Real.StarOrdered
 
-import Smt.Reconstruct.Arith.TransFns.ArithTransExpApproxAboveNeg
-
-namespace Smt.Reconstruct.Arith
+import Smt.Reconstruct.Real.TransFns.ArithTransExpApproxAboveNeg
 
 open Set Real
+
+namespace Smt.Reconstruct.Real.TransFns
 
 theorem concaveIccSubset {f : ℝ → ℝ} {l1 r1 l2 r2 : ℝ} : ConcaveOn ℝ (Icc l2 r2) f → Icc l1 r1 ⊆ Icc l2 r2 → ConcaveOn ℝ (Icc l1 r1) f := by
   intros h1 h2
@@ -97,4 +97,4 @@ theorem arithTransSineApproxBelowPos (d k : ℕ) (hd : d = 4 * k + 3) (t l u : �
         (by simp; linarith)
         (by simp; linarith)
 
-end Smt.Reconstruct.Arith
+end Smt.Reconstruct.Real.TransFns

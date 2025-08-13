@@ -14,9 +14,9 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Data.Complex.Exponential
 
-namespace Smt.Reconstruct.Arith
-
 open Real
+
+namespace Smt.Reconstruct.Real.TransFns
 
 theorem arithTransSineTangentPi₁ : ∀ (t : ℝ),
     t > - Real.pi → sin t > - Real.pi - t := by
@@ -46,4 +46,4 @@ theorem arithTransSineTangentPi : ∀ (t : ℝ),
     (t > -Real.pi → sin t > -Real.pi - t) ∧ (t < Real.pi → sin t < Real.pi - t) := fun t =>
   ⟨arithTransSineTangentPi₁ t, arithTransSineTangentPi₂ t⟩
 
-end Smt.Reconstruct.Arith
+end Smt.Reconstruct.Real.TransFns

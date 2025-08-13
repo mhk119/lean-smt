@@ -10,14 +10,16 @@ Implementation of:
 https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html#_CPPv4N4cvc58internal6PfRule33ARITH_TRANS_SINE_APPROX_ABOVE_POSE
 -/
 
-import Smt.Reconstruct.Arith.TransFns.ArithTransSineApproxBelowNeg
+import Smt.Reconstruct.Real.TransFns.ArithTransSineApproxBelowNeg
 
 open Set Real
 
-namespace Smt.Reconstruct.Arith
+namespace Smt.Reconstruct.Real.TransFns
 
 theorem arithTransSineApproxAbovePos (d k : ℕ) (hd : d = 4*k + 1)
                                      (hx : 0 < x) (hx2 : x ≤ π) :
     Real.sin x ≤ taylorWithinEval Real.sin d Set.univ 0 x := by
   rw [← neg_neg x, sin_neg, taylorSin_neg, neg_le_neg_iff]
   apply arithTransSineApproxBelowNeg d k hd (by linarith) (by linarith)
+
+end Smt.Reconstruct.Real.TransFns

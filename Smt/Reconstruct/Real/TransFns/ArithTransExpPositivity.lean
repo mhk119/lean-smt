@@ -7,14 +7,13 @@ Authors: Tomaz Mascarenhas
 
 /-
 Implementation of:
-https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html#_CPPv4N4cvc58internal6PfRule19ARITH_TRANS_EXP_NEGE
+https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html#_CPPv4N4cvc58internal6PfRule26ARITH_TRANS_EXP_POSITIVITYE
 -/
 
 import Mathlib.Data.Complex.Exponential
 
-namespace Smt.Reconstruct.Arith
+namespace Smt.Reconstruct.Real.TransFns
 
-theorem arithTransExpNeg (t : ℝ) : t < 0 ↔ Real.exp t < 1 :=
-  Iff.comm.mp Real.exp_lt_one_iff
+theorem arithTransExpPositivity (t : Real) : Real.exp t > 0 := Real.exp_pos t
 
-end Smt.Reconstruct.Arith
+end Smt.Reconstruct.Real.TransFns
