@@ -9,6 +9,7 @@ import Qq
 import Smt.Reconstruct.Builtin.Lemmas
 import Smt.Reconstruct.Real.Lemmas
 import Smt.Reconstruct.Real.Tactic
+import Smt.Reconstruct.Real.TransFns
 import Smt.Reconstruct.Real.Rewrites
 import Smt.Reconstruct.Rewrite
 import Smt.Reconstruct.State
@@ -89,10 +90,10 @@ def reconstructReal : TermReconstructor := fun t => do match t.getKind with
   | .IS_INTEGER =>
     let x : Q(Real) ← reconstructTerm t[0]!
     return q($x = ⌊$x⌋)
-  /- | .EXPONENTIAL => -/
-  /-   if t.getSort.isInteger then return none -/
-  /-   let x : Expr ← reconstructTerm t[0]! -/
-  /-   return mkApp (mkConst `Real.exp) x -/
+  | .EXPONENTIAL =>
+    if t.getSort.isInteger then return none
+    let x : Expr ← reconstructTerm t[0]!
+    return mkApp (mkConst `Real.exp) x
   | _ => return none
 where
   mkRealLit (n : Nat) : Q(Real) := match h : n with
@@ -111,9 +112,9 @@ where
 def reconstructRewrite (pf : cvc5.Proof) : ReconstructM (Option Expr) := do
   match pf.getRewriteRule! with
   | .ARITH_POW_ELIM =>
-    if pf.getResult[0]![0]!.getSort.isInteger then return none
-    let x : Q(Real) ← reconstructTerm pf.getResult[0]![0]!
-    let c : Nat := pf.getResult[0]![1]!.getIntegerValue!.toNat
+    if (pf.getResult[0]!)[0]!.getSort.isInteger then return none
+    let x : Q(Real) ← reconstructTerm (pf.getResult[0]!)[0]!
+    let c : Nat := (pf.getResult[0]!)[1]!.getIntegerValue!.toNat
     let y : Q(Real) ← reconstructTerm pf.getResult[1]!
     let mut h : Q($x ^ $c = $y) := .app q(@Eq.refl Real) y
     if c > 0 then
@@ -261,8 +262,8 @@ def reconstructSumUB (pf : cvc5.Proof) : ReconstructM (Option Expr) := do
 
 def reconstructMulAbsComparison (pf : cvc5.Proof) : ReconstructM (Option Expr) := do
   let f := fun (ks, ls, rs, hs) p => do
-    let l : Q(Real) ← reconstructTerm p.getResult[0]![0]!
-    let r : Q(Real) ← reconstructTerm p.getResult[1]![0]!
+    let l : Q(Real) ← reconstructTerm (p.getResult[0]!)[0]!
+    let r : Q(Real) ← reconstructTerm (p.getResult[1]!)[0]!
     let lsl := q($ls * $l)
     let rsr := q($rs * $r)
     let k := p.getResult.getKind
@@ -281,8 +282,8 @@ def reconstructMulAbsComparison (pf : cvc5.Proof) : ReconstructM (Option Expr) :
     else
       throwError "[mul_abs]: invalid kinds: {ks}, {k}"
   let k := pf.getChildren[0]!.getResult.getKind
-  let ls : Q(Real) ← reconstructTerm pf.getChildren[0]!.getResult[0]![0]!
-  let rs : Q(Real) ← reconstructTerm pf.getChildren[0]!.getResult[1]![0]!
+  let ls : Q(Real) ← reconstructTerm (pf.getChildren[0]!.getResult[0]!)[0]!
+  let rs : Q(Real) ← reconstructTerm (pf.getChildren[0]!.getResult[1]!)[0]!
   let hs ← reconstructProof pf.getChildren[0]!
   let (ks, ls, rs, hs) ← pf.getChildren[1:].foldlM f (k, ls, rs, hs)
   addThm (if ks == .EQUAL then q($ls = $rs) else q($ls > $rs)) hs
@@ -295,7 +296,7 @@ def reconstructMulSign (pf : cvc5.Proof) : ReconstructM (Option Expr) := do
     let t := ts[i]
     let p : Q(Prop) ← reconstructTerm t
     hs := hs.push (Name.num `a i, fun _ => return p)
-    map := map.insert (if t.getKind == .NOT then t[0]![0]! else t[0]!) i
+    map := map.insert (if t.getKind == .NOT then (t[0]!)[0]! else t[0]!) i
   let t := pf.getResult[1]!
   let vs := if t[0]!.getKind == .CONST_INTEGER then t[1]!.getChildren else t[0]!.getChildren
   let f t ps := do
@@ -348,13 +349,13 @@ where
       return ha
 
 def reconstructArithPolyNormRel (pf : cvc5.Proof) : ReconstructM (Option Expr) := do
-  let lcx : Std.Internal.Rat := pf.getChildren[0]!.getResult[0]![0]!.getRationalValue!
-  let cx : Q(Real) ← reconstructTerm pf.getChildren[0]!.getResult[0]![0]!
-  let cy : Q(Real) ← reconstructTerm pf.getChildren[0]!.getResult[1]![0]!
-  let x₁ : Q(Real) ← reconstructTerm pf.getResult[0]![0]!
-  let x₂ : Q(Real) ← reconstructTerm pf.getResult[0]![1]!
-  let y₁ : Q(Real) ← reconstructTerm pf.getResult[1]![0]!
-  let y₂ : Q(Real) ← reconstructTerm pf.getResult[1]![1]!
+  let lcx : Std.Internal.Rat := (pf.getChildren[0]!.getResult[0]!)[0]!.getRationalValue!
+  let cx : Q(Real) ← reconstructTerm (pf.getChildren[0]!.getResult[0]!)[0]!
+  let cy : Q(Real) ← reconstructTerm (pf.getChildren[0]!.getResult[1]!)[0]!
+  let x₁ : Q(Real) ← reconstructTerm (pf.getResult[0]!)[0]!
+  let x₂ : Q(Real) ← reconstructTerm (pf.getResult[0]!)[1]!
+  let y₁ : Q(Real) ← reconstructTerm (pf.getResult[1]!)[0]!
+  let y₂ : Q(Real) ← reconstructTerm (pf.getResult[1]!)[1]!
   let h : Q($cx * ($x₁ - $x₂) = $cy * ($y₁ - $y₂)) ← reconstructProof pf.getChildren[0]!
   let k := pf.getResult[0]!.getKind
   let (hcx, hcy) :=
@@ -365,7 +366,7 @@ def reconstructArithPolyNormRel (pf : cvc5.Proof) : ReconstructM (Option Expr) :
   let hcy ← Meta.mkFreshExprMVar hcy
   Real.normNum hcx.mvarId!
   Real.normNum hcy.mvarId!
-  let n ← getThmName k pf.getResult[0]![0]!.getSort.isInteger pf.getResult[1]![0]!.getSort.isInteger (lcx > 0)
+  let n ← getThmName k (pf.getResult[0]!)[0]!.getSort.isInteger (pf.getResult[1]!)[0]!.getSort.isInteger (lcx > 0)
   return mkApp9 (.const n []) x₁ x₂ y₁ y₂ cx cy hcx hcy h
 where
   getThmName (k : cvc5.Kind) (il ir sign : Bool) : ReconstructM Name :=
@@ -462,7 +463,7 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
   | .ARITH_REDUCTION =>
     if pf.getArguments[0]!.getSort.isInteger then return none
     if pf.getArguments[0]!.getKind == .ABS then
-      let x : Q(Real) ← reconstructTerm pf.getArguments[0]![0]!
+      let x : Q(Real) ← reconstructTerm (pf.getArguments[0]!)[0]!
       addThm q(|$x| = ite ($x < 0) (-$x) $x) q(@Real.abs_elim $x)
     else
       return none
@@ -473,16 +474,16 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
     let tac := if ← useNative then Real.nativePolyNorm else Real.polyNorm
     addTac q($a = $b) tac
   | .ARITH_POLY_NORM_REL =>
-    if pf.getChildren[0]!.getResult[0]![0]!.getSort.isInteger then return none
+    if (pf.getChildren[0]!.getResult[0]!)[0]!.getSort.isInteger then return none
     reconstructArithPolyNormRel pf
   | .ARITH_MULT_SIGN =>
-    if pf.getResult[1]![0]!.getSort.isInteger then return none
+    if (pf.getResult[1]!)[0]!.getSort.isInteger then return none
     reconstructMulSign pf
   | .ARITH_MULT_POS =>
     if pf.getArguments[0]!.getSort.isInteger then return none
     let m : Q(Real) ← reconstructTerm pf.getArguments[0]!
-    let l : Q(Real) ← reconstructTerm pf.getArguments[1]![0]!
-    let r : Q(Real) ← reconstructTerm pf.getArguments[1]![1]!
+    let l : Q(Real) ← reconstructTerm (pf.getArguments[1]!)[0]!
+    let r : Q(Real) ← reconstructTerm (pf.getArguments[1]!)[1]!
     match pf.getArguments[1]!.getKind with
     | .LT =>
       addThm q($m > 0 ∧ $l < $r → $m * $l < $m * $r) q(@Real.mul_pos_lt $l $r $m)
@@ -498,8 +499,8 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
   | .ARITH_MULT_NEG =>
     if pf.getArguments[0]!.getSort.isInteger then return none
     let m : Q(Real) ← reconstructTerm pf.getArguments[0]!
-    let l : Q(Real) ← reconstructTerm pf.getArguments[1]![0]!
-    let r : Q(Real) ← reconstructTerm pf.getArguments[1]![1]!
+    let l : Q(Real) ← reconstructTerm (pf.getArguments[1]!)[0]!
+    let r : Q(Real) ← reconstructTerm (pf.getArguments[1]!)[1]!
     match pf.getArguments[1]!.getKind with
     | .LT =>
       addThm q($m < 0 ∧ $l < $r → $m * $l > $m * $r) q(@Real.mul_neg_lt $l $r $m)
