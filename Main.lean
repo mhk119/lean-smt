@@ -145,6 +145,27 @@ def module : Array Import := #[
   `Definitions
 ]
 
+def modules : Array Import := #[
+  `Smt.Reconstruct.Builtin.Lemmas,
+  `Smt.Reconstruct.Builtin.Rewrites,
+  `Smt.Reconstruct.Int.Lemmas,
+  `Smt.Reconstruct.Int.Polynorm,
+  `Smt.Reconstruct.Int.Rewrites,
+  `Smt.Reconstruct.Prop.Core,
+  `Smt.Reconstruct.Prop.Lemmas,
+  `Smt.Reconstruct.Prop.Rewrites,
+  `Smt.Reconstruct.Quant.Lemmas,
+  -- `Smt.Reconstruct.Rat.Core,
+  -- `Smt.Reconstruct.Rat.Lemmas,
+  -- `Smt.Reconstruct.Rat.Polynorm,
+  -- `Smt.Reconstruct.Rat.Rewrites,
+  `Smt.Reconstruct.Real.Polynorm,
+  `Smt.Reconstruct.Real.Lemmas,
+  `Smt.Reconstruct.Real.Rewrites,
+  `Smt.Reconstruct.Real.TransFns,
+  `Smt.Reconstruct.UF.Rewrites
+]
+
 namespace Checker
 
 open cvc5 in
@@ -182,7 +203,7 @@ unsafe def solveAndCheck' (query : String) (native : Bool) : IO Unit := do
     let t0 ← IO.monoMsNow
     initSearchPath (← findSysroot)
     enableInitializersExecution
-    let env ← importModules module {} 0 (loadExts := true)
+    let env ← importModules modules {} 0 (loadExts := true)
     let t1 ← IO.monoMsNow
     IO.printlnAndFlush s!"[time] load: {t1 - t0}"
     let coreContext := { fileName := "cpc-checker", fileMap := default }
