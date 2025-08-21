@@ -22,7 +22,7 @@ namespace Smt.Reconstruct.Real.TransFns
 theorem le_self_sq (n : Nat) : n ≤ n*n := by
   exact Nat.le_mul_self n
 
-theorem expApproxAbovePos {x : Real} (hx : 0 < x) (h1 : x^(d+1) < Nat.factorial (d+1)):
+theorem expApproxAbovePos {x : Real} (_hx : 0 < x) (h1 : x^(d+1) < Nat.factorial (d+1)):
   let r : ℕ → ℝ → ℝ := fun d => (fun t => (1-t^(d+1)/(d+1)!))
   let p : ℕ → ℝ → ℝ := fun d => ((taylorWithinEval Real.exp d Set.univ 0) / (r d))
   ∀ x' ≤ x, 0 < x' → Real.exp x' ≤ p d x' := by
