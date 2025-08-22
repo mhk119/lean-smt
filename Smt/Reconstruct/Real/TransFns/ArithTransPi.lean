@@ -18,7 +18,7 @@ import Mathlib.Data.Real.Pi.Bounds
 
 import Smt.Reconstruct.Util
 
-open Lean
+open Lean Qq
 open Elab Tactic Meta
 
 open Real
@@ -35,7 +35,7 @@ def expr_pi_lower : Expr :=
     (mkConst ``Rat) (Lean.Expr.const `Rat.instOfScientific [])
     (.lit (.natVal 314159265358979323846)) (mkConst ``Bool.true) (.lit (.natVal 20))
 
-def ratCast_lt_mpr {x y : ℚ} : x < y → (x : ℝ) < (y : ℝ) := ratCast_lt.mpr
+theorem ratCast_le {x y : ℚ} : x ≤ y → (x : ℝ) ≤ (y : ℝ) := fun a => GCongr.ratCast_le_ratCast a
 
 def ratOfFloat : Expr → Expr
   | .app (.app (.app (.app (.app a _) _) d) e) f =>
@@ -52,37 +52,57 @@ def ratOfFloatOrNat : Expr → MetaM Expr := fun e =>
   else
     pure (ratOfFloat e)
 
-def arithTransPiMetaLt : Expr → MetaM Expr :=
+def arithTransPiMetaLe : Expr → MetaM Expr :=
   fun e => do
-    let goal ← mkAppOptM ``LT.lt #[mkConst ``Rat, none, e, expr_pi_lower]
+    let goal ← mkAppOptM ``LE.le #[mkConst ``Rat, none, e, expr_pi_lower]
     let mvarTmp ← Expr.mvarId! <$> mkFreshExprMVar goal
     let _ ← Mathlib.Meta.NormNum.normNumAt mvarTmp (← Simp.Context.mkDefault) #[]
     let some val ← getExprMVarAssignment? mvarTmp | throwError "unreachable"
-    let val' ← mkAppM ``ratCast_lt_mpr #[val]
-    let answer ← mkAppOptM ``lt_trans
-      #[mkConst ``Real, none, none, none, none, val', mkConst ``pi_gt_d20]
+    let val' ← mkAppM ``ratCast_le #[val]
+    let answer ← mkAppOptM ``le_trans
+      #[mkConst ``Real, none, none, none, none, val', q(le_of_lt pi_gt_d20)]
     return answer
 
-def arithTransPiMetaGt : Expr → MetaM Expr :=
+-- Assumes `e` is a real variable
+def arithTransPiMetaLeReal : Expr → MetaM Expr :=
   fun e => do
-    let goal ← mkAppOptM ``GT.gt #[mkConst ``Rat, none, e, expr_pi_upper]
+    let expr_pi_lower_real ← mkAppOptM ``Rat.cast #[mkConst ``Real, none, expr_pi_lower]
+    let goal ← mkAppOptM ``LE.le #[mkConst ``Real, none, e, expr_pi_lower_real]
     let mvarTmp ← Expr.mvarId! <$> mkFreshExprMVar goal
     let _ ← Mathlib.Meta.NormNum.normNumAt mvarTmp (← Simp.Context.mkDefault) #[]
     let some val ← getExprMVarAssignment? mvarTmp | throwError "unreachable"
-    let val' ← mkAppM ``ratCast_lt_mpr #[val]
-    let answer ← mkAppOptM ``gt_trans
-      #[mkConst ``Real, none, none, none, none, val', mkConst ``pi_lt_d20]
+    let answer ← mkAppOptM ``le_trans
+      #[mkConst ``Real, none, none, none, none, val, q(le_of_lt pi_gt_d20)]
+    return answer
+
+def arithTransPiMetaGe : Expr → MetaM Expr :=
+  fun e => do
+    let goal ← mkAppOptM ``GE.ge #[mkConst ``Rat, none, e, expr_pi_upper]
+    let mvarTmp ← Expr.mvarId! <$> mkFreshExprMVar goal
+    let _ ← Mathlib.Meta.NormNum.normNumAt mvarTmp (← Simp.Context.mkDefault) #[]
+    let some val ← getExprMVarAssignment? mvarTmp | throwError "unreachable"
+    let val' ← mkAppM ``ratCast_le #[val]
+    let answer ← mkAppOptM ``ge_trans
+      #[mkConst ``Real, none, none, none, none, val', q(le_of_lt pi_lt_d20)]
+    return answer
+
+-- Assumes `e` is a real variable
+def arithTransPiMetaGeReal : Expr → MetaM Expr :=
+  fun e => do
+    let expr_pi_upper_real ← mkAppOptM ``Rat.cast #[mkConst ``Real, none, expr_pi_upper]
+    let goal ← mkAppOptM ``GE.ge #[mkConst ``Real, none, e, expr_pi_upper_real]
+    let mvarTmp ← Expr.mvarId! <$> mkFreshExprMVar goal
+    let _ ← Mathlib.Meta.NormNum.normNumAt mvarTmp (← Simp.Context.mkDefault) #[]
+    let some val ← getExprMVarAssignment? mvarTmp | throwError "unreachable"
+    let answer ← mkAppOptM ``ge_trans
+      #[mkConst ``Real, none, none, none, none, val, q(le_of_lt pi_lt_d20)]
     return answer
 
 def arithTransPiSolve (l u : Expr) : MetaM Expr := do
   let l' ← ratOfFloatOrNat l
-  let lt ← inferType l
-  let lt' ← inferType l'
-  dbg_trace "[arithTransPiSolve]: l = {l}, type = {lt}"
-  dbg_trace "[arithTransPiSolve]: l' = {l'}, type = {lt'}"
   let u' ← ratOfFloatOrNat u
-  let val₁ ← arithTransPiMetaLt l'
-  let val₂ ← arithTransPiMetaGt u'
+  let val₁ ← arithTransPiMetaLe l'
+  let val₂ ← arithTransPiMetaGe u'
   mkAppM ``And.intro #[val₁, val₂]
 
 def arithTransPiMeta (mvar : MVarId) : Expr → Expr → Name → MetaM MVarId :=
@@ -104,15 +124,16 @@ syntax (name := arithTransPi) "arithTransPi" term "," term : tactic
     replaceMainGoal [mvar']
     evalTactic (← `(tactic| exact $(mkIdent fname)))
 
-example : 3.1415926535 < Real.pi ∧ Real.pi < 3.1415926536 := by
+example : 3.1415926535 ≤ Real.pi ∧ Real.pi ≤ 3.1415926536 := by
   arithTransPi 3.1415926535 , 3.1415926536
 
-open Qq in
 def arithTransPiTac (mvar : MVarId) : MetaM Unit := do
   let t : Q(Prop) ← mvar.getType
   match t with
   | ~q(Real.pi ≥ $l ∧ Real.pi ≤ $u) =>
-    let answer ← arithTransPiSolve l u
+    let val₁ ← arithTransPiMetaLeReal l
+    let val₂ ← arithTransPiMetaGeReal u
+    let answer ← mkAppM ``And.intro #[val₁, val₂]
     mvar.assign answer
   | _ => throwError "[arithTransPiTac] Unexpected pattern for input metavariable"
 

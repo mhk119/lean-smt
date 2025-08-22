@@ -13,6 +13,7 @@ import Smt.Reconstruct.Real.TransFns
 import Smt.Reconstruct.Real.Rewrites
 import Smt.Reconstruct.Rewrite
 import Smt.Reconstruct.State
+import Smt.Reconstruct.Rat.ReconsTerm
 
 namespace Smt.Reconstruct.Real
 
@@ -92,8 +93,9 @@ def reconstructReal : TermReconstructor := fun t => do match t.getKind with
     return q($x = ⌊$x⌋)
   | .EXPONENTIAL =>
     if t.getSort.isInteger then return none
-    let x : Expr ← reconstructTerm t[0]!
-    return mkApp (mkConst `Real.exp) x
+    let x : Q(Real) ← reconstructTerm t[0]!
+    return q(Real.exp $x)
+  | .PI => return q(Real.pi)
   | _ => return none
 where
   mkRealLit (n : Nat) : Q(Real) := match h : n with
@@ -522,6 +524,12 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
       addThm q(($x * $y ≤ $b * $x + $a * $y - $a * $b) = ($x ≤ $a ∧ $y ≥ $b ∨ $x ≥ $a ∧ $y ≤ $b)) q(@Real.mul_tangent_lower_eq $a $b $x $y)
     else
       addThm q(($x * $y ≥ $b * $x + $a * $y - $a * $b) = ($x ≤ $a ∧ $y ≤ $b ∨ $x ≥ $a ∧ $y ≥ $b)) q(@Real.mul_tangent_upper_eq $a $b $x $y)
+  | .ARITH_TRANS_PI =>
+    let l : Q(Real) ← reconstructTerm pf.getArguments[0]!
+    let tl ← Meta.inferType l
+    dbg_trace "[reconstructRealProof]: tl = {tl}"
+    let u : Q(Real) ← reconstructTerm pf.getArguments[1]!
+    addTac q(Real.pi ≥ $l ∧ Real.pi ≤ $u) TransFns.arithTransPiTac
   | _ => return none
 
 end Smt.Reconstruct.Real
