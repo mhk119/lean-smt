@@ -11,6 +11,7 @@ https://cvc5.github.io/docs/cvc5-1.0.2/proofs/proof_rules.html#_CPPv4N4cvc58inte
 -/
 
 import Lean
+import Qq
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Tactic.NormNum
 import Mathlib.Data.Real.Pi.Bounds
@@ -73,18 +74,23 @@ def arithTransPiMetaGt : Expr → MetaM Expr :=
       #[mkConst ``Real, none, none, none, none, val', mkConst ``pi_lt_d20]
     return answer
 
-def arithTransPiMeta (mvar : MVarId) :
-    Expr → Expr → Name → MetaM MVarId :=
-  fun e₁ e₂ outName =>
-    mvar.withContext do
-      let e₁' ← ratOfFloatOrNat e₁
-      let e₂' ← ratOfFloatOrNat e₂
-      let val₁ ← arithTransPiMetaLt e₁'
-      let val₂ ← arithTransPiMetaGt e₂'
-      let answer ← mkAppM ``And.intro #[val₁, val₂]
-      let goal ← inferType answer
-      let (_, mvar') ← MVarId.intro1P $ ← mvar.assert outName goal answer
-      return mvar'
+def arithTransPiSolve (l u : Expr) : MetaM Expr := do
+  let l' ← ratOfFloatOrNat l
+  let lt ← inferType l
+  let lt' ← inferType l'
+  dbg_trace "[arithTransPiSolve]: l = {l}, type = {lt}"
+  dbg_trace "[arithTransPiSolve]: l' = {l'}, type = {lt'}"
+  let u' ← ratOfFloatOrNat u
+  let val₁ ← arithTransPiMetaLt l'
+  let val₂ ← arithTransPiMetaGt u'
+  mkAppM ``And.intro #[val₁, val₂]
+
+def arithTransPiMeta (mvar : MVarId) : Expr → Expr → Name → MetaM MVarId :=
+  fun e₁ e₂ outName => mvar.withContext do
+    let answer ← arithTransPiSolve e₁ e₂
+    let goal ← inferType answer
+    let (_, mvar') ← MVarId.intro1P $ ← mvar.assert outName goal answer
+    return mvar'
 
 syntax (name := arithTransPi) "arithTransPi" term "," term : tactic
 
@@ -100,5 +106,14 @@ syntax (name := arithTransPi) "arithTransPi" term "," term : tactic
 
 example : 3.1415926535 < Real.pi ∧ Real.pi < 3.1415926536 := by
   arithTransPi 3.1415926535 , 3.1415926536
+
+open Qq in
+def arithTransPiTac (mvar : MVarId) : MetaM Unit := do
+  let t : Q(Prop) ← mvar.getType
+  match t with
+  | ~q(Real.pi ≥ $l ∧ Real.pi ≤ $u) =>
+    let answer ← arithTransPiSolve l u
+    mvar.assign answer
+  | _ => throwError "[arithTransPiTac] Unexpected pattern for input metavariable"
 
 end Smt.Reconstruct.Real.TransFns
