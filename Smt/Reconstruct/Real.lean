@@ -13,7 +13,6 @@ import Smt.Reconstruct.Real.TransFns
 import Smt.Reconstruct.Real.Rewrites
 import Smt.Reconstruct.Rewrite
 import Smt.Reconstruct.State
-import Smt.Reconstruct.Rat.ReconsTerm
 
 namespace Smt.Reconstruct.Real
 
