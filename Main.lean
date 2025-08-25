@@ -94,7 +94,6 @@ def withDecls [Inhabited α] (ss : Array cvc5.Sort) (vs : Array cvc5.Term) (k : 
     k (fvNames₁.fold (·.insert) fvNames₂) (ts ++ fvs)
 
 def checkProof (pf : cvc5.Proof) (native : Bool) : MetaM Unit := withTraceNode `checkProof trace do
-  IO.printlnAndFlush "[checkProof]: start"
   let t0 ← IO.monoMsNow
   withDecls (getUninterpretedSorts pf.getResult).toArray (getFreeVars pf.getResult).toArray fun fvNames xs => do
   let ctx := { userNames := fvNames, native := native }

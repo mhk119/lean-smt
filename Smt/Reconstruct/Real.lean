@@ -525,8 +525,6 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
       addThm q(($x * $y ≥ $b * $x + $a * $y - $a * $b) = ($x ≤ $a ∧ $y ≤ $b ∨ $x ≥ $a ∧ $y ≥ $b)) q(@Real.mul_tangent_upper_eq $a $b $x $y)
   | .ARITH_TRANS_PI =>
     let l : Q(Real) ← reconstructTerm pf.getArguments[0]!
-    let tl ← Meta.inferType l
-    dbg_trace "[reconstructRealProof]: tl = {tl}"
     let u : Q(Real) ← reconstructTerm pf.getArguments[1]!
     addTac q(Real.pi ≥ $l ∧ Real.pi ≤ $u) TransFns.arithTransPiTac
   | _ => return none
