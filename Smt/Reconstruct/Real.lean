@@ -62,24 +62,64 @@ def reconstructReal : TermReconstructor := fun t => do match t.getKind with
     let x : Q(Real) ← reconstructTerm t[0]!
     return q(|$x|)
   | .LEQ =>
-    if t[0]!.getSort.isInteger then return none
-    let x : Q(Real) ← reconstructTerm t[0]!
-    let y : Q(Real) ← reconstructTerm t[1]!
+    if t[0]!.getSort.isInteger && t[1]!.getSort.isInteger then return none
+    let x ← reconstructTerm t[0]!
+    let x : Q(Real) :=
+      if (← Meta.inferType x) == .const `Int [] then
+        let x : Q(Int) := x
+        q(IntCast.intCast (R := Real) $x)
+      else x
+    let y ← reconstructTerm t[1]!
+    let y : Q(Real) :=
+      if (← Meta.inferType y) == .const `Int [] then
+        let y : Q(Int) := y
+        q(IntCast.intCast (R := Real) $y)
+      else y
     return q($x ≤ $y)
   | .LT =>
-    if t[0]!.getSort.isInteger then return none
-    let x : Q(Real) ← reconstructTerm t[0]!
-    let y : Q(Real) ← reconstructTerm t[1]!
+    if t[0]!.getSort.isInteger && t[1]!.getSort.isInteger then return none
+    let x ← reconstructTerm t[0]!
+    let x : Q(Real) :=
+      if (← Meta.inferType x) == .const `Int [] then
+        let x : Q(Int) := x
+        q(IntCast.intCast (R := Real) $x)
+      else x
+    let y ← reconstructTerm t[1]!
+    let y : Q(Real) :=
+      if (← Meta.inferType y) == .const `Int [] then
+        let y : Q(Int) := y
+        q(IntCast.intCast (R := Real) $y)
+      else y
     return q($x < $y)
   | .GEQ =>
-    if t[0]!.getSort.isInteger then return none
-    let x : Q(Real) ← reconstructTerm t[0]!
-    let y : Q(Real) ← reconstructTerm t[1]!
+    if t[0]!.getSort.isInteger && t[1]!.getSort.isInteger then return none
+    let x ← reconstructTerm t[0]!
+    let x : Q(Real) :=
+      if (← Meta.inferType x) == .const `Int [] then
+        let x : Q(Int) := x
+        q(IntCast.intCast (R := Real) $x)
+      else x
+    let y ← reconstructTerm t[1]!
+    let y : Q(Real) :=
+      if (← Meta.inferType y) == .const `Int [] then
+        let y : Q(Int) := y
+        q(IntCast.intCast (R := Real) $y)
+      else y
     return q($x ≥ $y)
   | .GT =>
-    if t[0]!.getSort.isInteger then return none
-    let x : Q(Real) ← reconstructTerm t[0]!
-    let y : Q(Real) ← reconstructTerm t[1]!
+    if t[0]!.getSort.isInteger && t[1]!.getSort.isInteger then return none
+    let x ← reconstructTerm t[0]!
+    let x : Q(Real) :=
+      if (← Meta.inferType x) == .const `Int [] then
+        let x : Q(Int) := x
+        q(IntCast.intCast (R := Real) $x)
+      else x
+    let y ← reconstructTerm t[1]!
+    let y : Q(Real) :=
+      if (← Meta.inferType y) == .const `Int [] then
+        let y : Q(Int) := y
+        q(IntCast.intCast (R := Real) $y)
+      else y
     return q($x > $y)
   | .TO_REAL =>
     let x : Q(Int) ← reconstructTerm t[0]!
@@ -94,6 +134,10 @@ def reconstructReal : TermReconstructor := fun t => do match t.getKind with
     if t.getSort.isInteger then return none
     let x : Q(Real) ← reconstructTerm t[0]!
     return q(Real.exp $x)
+  | .SINE =>
+    if t.getSort.isInteger then return none
+    let x : Q(Real) ← reconstructTerm t[0]!
+    return q(Real.sin $x)
   | .PI => return q(Real.pi)
   | _ => return none
 where
