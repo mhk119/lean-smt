@@ -151,7 +151,10 @@ where
   leftAssocOp (op : Expr) (t : cvc5.Term) : ReconstructM Expr := do
     let mut curr ← reconstructTerm t[0]!
     for i in [1:t.getNumChildren] do
-      curr := mkApp2 op curr (← reconstructTerm t[i]!)
+      let tr : Q(Int) ← reconstructTerm t[i]!
+      let tt ← Meta.inferType tr
+      let tr : Q(Real) := if tt == .const `Int [] then q(IntCast.intCast (R := Real) $tr) else tr
+      curr := mkApp2 op curr tr
     return curr
 
 def reconstructRewrite (pf : cvc5.Proof) : ReconstructM (Option Expr) := do
