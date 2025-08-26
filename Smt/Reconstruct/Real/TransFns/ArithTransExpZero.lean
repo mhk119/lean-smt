@@ -20,4 +20,7 @@ theorem arithTransExpZero (t : ℝ) :
   · intro h; rw [h]; simp
   · intro h; simp at h; assumption
 
+theorem arithTransExpZeroEq (t : ℝ) :
+    (t = 0) = (Real.exp t = 1) := propext (arithTransExpZero t)
+
 end Smt.Reconstruct.Real.TransFns

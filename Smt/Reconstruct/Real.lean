@@ -571,6 +571,9 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
     let l : Q(Real) ← reconstructTerm pf.getArguments[0]!
     let u : Q(Real) ← reconstructTerm pf.getArguments[1]!
     addTac q(Real.pi ≥ $l ∧ Real.pi ≤ $u) TransFns.arithTransPiTac
+  | .ARITH_TRANS_EXP_ZERO =>
+    let t : Q(Real) ← reconstructTerm pf.getArguments[0]!
+    addThm q(($t = 0) = (Real.exp $t = 1)) q(TransFns.arithTransExpZeroEq $t)
   | _ => return none
 
 end Smt.Reconstruct.Real
