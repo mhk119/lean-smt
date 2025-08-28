@@ -25,6 +25,16 @@ def reconstructRealSort : SortReconstructor := fun s => do match s.getKind with
 def reconstructReal : TermReconstructor := fun t => do match t.getKind with
   | .SKOLEM => match t.getSkolemId! with
     | .DIV_BY_ZERO => return q(fun (x : Real) => x / 0)
+    | .TRANSCENDENTAL_PURIFY_ARG =>
+      let .app _ X ← reconstructTerm t.getSkolemIndices![0]! | throwError "assumption failed: purify arg is always an application"
+      let X : Q(Real) := X
+      let s : Q(Real) := q(Classical.epsilon (TransFns.shift_prop_part $X))
+      let y : Q(Real) := q(Classical.epsilon (TransFns.shift_prop $X $s))
+      return y
+    | .TRANSCENDENTAL_SINE_PHASE_SHIFT =>
+      let X : Q(Real) ← reconstructTerm t.getSkolemIndices![0]!
+      let s : Q(Real) := q(Classical.epsilon (TransFns.shift_prop_part $X))
+      return s
     | _ => return none
   | .CONST_RATIONAL =>
     let c : Std.Internal.Rat := t.getRationalValue!
@@ -149,11 +159,19 @@ where
       let h := mkApp3 q(@instOfNatAtLeastTwo Real) (mkRawNatLit n) q(Real.instNatCast) h
       mkApp2 q(@OfNat.ofNat Real) (mkRawNatLit n) h
   leftAssocOp (op : Expr) (t : cvc5.Term) : ReconstructM Expr := do
-    let mut curr ← reconstructTerm t[0]!
+    let tmp : Q(Int) ← reconstructTerm t[0]!
+    let mut curr : Q(Real) :=
+      if (← Meta.inferType tmp) == .const `Int [] then
+        q(IntCast.intCast (R := Real) $tmp)
+      else tmp
     for i in [1:t.getNumChildren] do
       let tr : Q(Int) ← reconstructTerm t[i]!
       let tt ← Meta.inferType tr
-      let tr : Q(Real) := if tt == .const `Int [] then q(IntCast.intCast (R := Real) $tr) else tr
+      let tr : Q(Real) :=
+        if tt != .const `Real [] then
+          q(IntCast.intCast (R := Real) $tr)
+        else
+          tr
       curr := mkApp2 op curr tr
     return curr
 
@@ -320,8 +338,12 @@ def reconstructMulAbsComparison (pf : cvc5.Proof) : ReconstructM (Option Expr) :
       let h : Q(|$l| = |$r|) ← reconstructProof p
       return (.EQUAL, lsl, rsr, q(Real.mul_abs₁ $hs $h))
     else if ks == .GT && k == .AND then
+      let r : Q(Real) ← reconstructTerm ((p.getResult[0]!)[1]!)[0]!
+      let l : Q(Real) ← reconstructTerm ((p.getResult[0]!)[0]!)[0]!
+      let lsl := q($ls * $l)
+      let rsr := q($rs * $r)
       let hs : Q(|$ls| > |$rs|) := hs
-      let h : Q(|$l| = |$r| ∧ |$l| ≠ 0) ← reconstructProof p
+      let h : Q(|$l| = |$r| ∧ $l ≠ 0) ← reconstructProof p
       return (.GT, lsl, rsr, q(Real.mul_abs₂ $hs $h))
     else if ks == .GT && k == .GT then
       let hs : Q(|$ls| > |$rs|) := hs
@@ -462,6 +484,7 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
     if pf.getResult[0]!.getSort.isInteger then return none
     reconstructSumUB pf
   | .ARITH_MULT_ABS_COMPARISON =>
+    /- return none -/
     if pf.getResult[0]!.getSort.isInteger then return none
     reconstructMulAbsComparison pf
   | .INT_TIGHT_UB =>
@@ -577,6 +600,11 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
   | .ARITH_TRANS_EXP_ZERO =>
     let t : Q(Real) ← reconstructTerm pf.getArguments[0]!
     addThm q(($t = 0) = (Real.exp $t = 1)) q(TransFns.arithTransExpZeroEq $t)
+  | .ARITH_TRANS_SINE_SHIFT =>
+    let x : Q(Real) ← reconstructTerm pf.getArguments[0]!
+    let s : Q(Real) := q(Classical.epsilon (TransFns.shift_prop_part $x))
+    let y : Q(Real) := q(Classical.epsilon (TransFns.shift_prop $x $s))
+    addThm q(TransFns.shift_prop $x $s $y) q(TransFns.arithTransSineShift₁ $x)
   | _ => return none
 
 end Smt.Reconstruct.Real
