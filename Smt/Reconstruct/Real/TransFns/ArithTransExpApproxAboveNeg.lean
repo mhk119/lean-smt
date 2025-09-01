@@ -21,16 +21,6 @@ open Set Real
 
 namespace Smt.Reconstruct.Real.TransFns
 
-theorem expApproxAbove (d k : Nat) (hd : d = 2*k) (hx: x < 0) :
-  Real.exp x ≤ taylorWithinEval Real.exp d Set.univ 0 x := by
-  have ⟨x', hx', H⟩ := taylor_mean_remainder_lagrange₁ hx contDiff_exp (n := d)
-  rw [taylorWithinEval_eq _ (right_mem_Icc.mpr (le_of_lt hx)) (uniqueDiffOn_Icc hx) contDiff_exp] at H
-  rw [←sub_nonpos, H]
-  rw [iteratedDerivWithin_eq_iteratedDeriv contDiff_exp (uniqueDiffOn_Icc hx) _ (Ioo_subset_Icc_self hx'), iteratedDeriv_exp]
-  apply mul_nonpos_of_nonpos_of_nonneg _ (by apply inv_nonneg.mpr; simp)
-  apply mul_nonpos_of_nonneg_of_nonpos (le_of_lt (Real.exp_pos x'))
-  apply Odd.pow_nonpos _ (by simp[le_of_lt hx]); simp [hd]
-
 theorem le_of_ConvexOn (f : ℝ → ℝ) (hf : ConvexOn Real s f) (hx : x ∈ s) (hz : z ∈ s)
                         (ht0 : 0 ≤ t) (ht1 : t ≤ 1) (hxz : x ≤ z):
   f (t*x + (1-t)*z) ≤ t*(f x) + (1-t)*(f z) := by

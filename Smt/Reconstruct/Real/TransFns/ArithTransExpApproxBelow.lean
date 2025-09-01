@@ -58,15 +58,100 @@ theorem arithTransExpApproxBelow₃ (x : ℝ) (d n : ℕ) (_ : d = 2 * n + 1) (h
   rw [hx]
   simp
 
-theorem arithTransExpApproxBelow (x : ℝ) (d n : ℕ) (h : d = 2 * n + 1) :
-    Real.exp x ≥ taylorWithinEval Real.exp d Set.univ 0 x := by
-  if hx : x < 0 then
-    exact arithTransExpApproxBelow₂ x d n h hx
-  else if hx2 : x = 0 then
-    exact arithTransExpApproxBelow₃ x d n h hx2
-  else
-    have : 0 < x := by push_neg at *; exact lt_of_le_of_ne hx (id (Ne.symm hx2))
-    exact arithTransExpApproxBelow₁ x d n h this
+lemma taylor_exp_eq (d : ℕ) (x : ℝ) :
+    taylorWithinEval Real.exp d Set.univ 0 x =
+      ∑ i ∈ Finset.range (d + 1), x^i / Nat.factorial i := by
+  rw [taylor_within_apply]
+  congr
+  ext k
+  rw [iteratedDerivWithin_eq_iteratedDeriv (f := Real.exp) (d := k) (s := Set.univ)]
+  · rw [iteratedDeriv_exp]
+    simp
+    exact inv_mul_eq_div (↑k.factorial) (x ^ k)
+  · exact contDiff_exp
+  · exact uniqueDiffOn_univ
+  · exact trivial
+
+lemma ext_taylor_exp_eq (d : ℕ) :
+    taylorWithinEval Real.exp d Set.univ 0 =
+    fun x : Real => ∑ i ∈ Finset.range (d + 1), x ^ i / Nat.factorial i := by
+  ext x
+  exact taylor_exp_eq d x
+
+lemma deriv_taylor (d : ℕ) : deriv (taylorWithinEval Real.exp (d + 1) Set.univ 0) = taylorWithinEval Real.exp d Set.univ 0 := by
+  rw [ext_taylor_exp_eq, ext_taylor_exp_eq]
+  ext x
+  rw [deriv_sum]
+  · simp
+    induction d
+    next => simp [Finset.range]
+    next d IH =>
+      rw [Finset.sum_range_succ, IH]
+      rw [Finset.sum_range_succ (n := d + 1)]
+      simp
+      field_simp
+      rw [mul_comm, <- mul_assoc]
+      have : ((d + 1).factorial : Real) * (d + 2) = (d + 2).factorial := by
+        norm_cast
+        simp [Nat.factorial]
+        linarith
+      rw [this]
+      linarith
+  · intros i hi
+    have : i.factorial ≠ 0 := by exact Nat.factorial_ne_zero i
+    have : (i.factorial : ℝ) ≠ 0 := by exact Nat.cast_ne_zero.mpr this
+    simp_all only [Finset.mem_range, ne_eq, Nat.cast_eq_zero, not_false_eq_true, differentiableAt_id',
+  DifferentiableAt.pow, DifferentiableAt.div_const]
+
+theorem expApproxAbove (d k : Nat) (hd : d = 2*k) (hx: x < 0) :
+  Real.exp x ≤ taylorWithinEval Real.exp d Set.univ 0 x := by
+  have ⟨x', hx', H⟩ := taylor_mean_remainder_lagrange₁ hx contDiff_exp (n := d)
+  rw [taylorWithinEval_eq _ (right_mem_Icc.mpr (le_of_lt hx)) (uniqueDiffOn_Icc hx) contDiff_exp] at H
+  rw [←sub_nonpos, H]
+  rw [iteratedDerivWithin_eq_iteratedDeriv contDiff_exp (uniqueDiffOn_Icc hx) _ (Ioo_subset_Icc_self hx'), iteratedDeriv_exp]
+  apply mul_nonpos_of_nonpos_of_nonneg _ (by apply inv_nonneg.mpr; simp)
+  apply mul_nonpos_of_nonneg_of_nonpos (le_of_lt (Real.exp_pos x'))
+  apply Odd.pow_nonpos _ (by simp[le_of_lt hx]); simp [hd]
+
+theorem taylorWithin_mono : ∀ (d : Nat), Odd d → Monotone (taylorWithinEval Real.exp d Set.univ 0) := by
+  intros d hd
+  apply monotone_of_deriv_nonneg
+  · rw [ext_taylor_exp_eq]
+    refine Differentiable.sum ?_
+    intros i hi
+    have h1 : i.factorial ≠ 0 := Nat.factorial_ne_zero i
+    have h2 : (i.factorial : Real) ≠ 0 := Nat.cast_ne_zero.mpr h1
+    refine Differentiable.div ?_ ?_ fun x => h2
+    · exact differentiable_pow i
+    · simp
+  · intro x
+    have hd_copy := hd
+    obtain ⟨m, hm⟩ := hd
+    obtain ⟨d', hd'⟩  : ∃ d' : Nat, d = d' + 1 := by exact Exists.imp' (HMul.hMul 2) (fun a a => a) hd_copy
+    obtain ⟨m', hm'⟩  : Even d' := by use m; linarith
+    rw [hd', deriv_taylor, hm', show m' + m' = 2 * m' by omega]
+    if hx: 0 ≤ x then
+      rw [taylor_exp_eq]
+      positivity
+    else
+      push_neg at hx
+      have h1 := expApproxAbove (2 * m') m' rfl hx
+      have h2 : 0 ≤ Real.exp x := exp_nonneg x
+      exact Preorder.le_trans 0 (rexp x) (taylorWithinEval rexp (2 * m') univ 0 x) h2 h1
+
+theorem arithTransExpApproxBelow (t c : ℝ) (d n : ℕ) (h : d = 2 * n + 1) :
+    t ≥ c → Real.exp t ≥ taylorWithinEval Real.exp d Set.univ 0 c := by
+  intro ht
+  have foo := 
+    if hx : t < 0 then by
+      exact arithTransExpApproxBelow₂ t d n h hx
+    else if hx2 : t = 0 then by
+      exact arithTransExpApproxBelow₃ t d n h hx2
+    else by
+      have : 0 < t := by push_neg at *; exact lt_of_le_of_ne hx (id (Ne.symm hx2))
+      exact arithTransExpApproxBelow₁ t d n h this
+  have : taylorWithinEval Real.exp d Set.univ 0 t ≥ taylorWithinEval Real.exp d Set.univ 0 c := taylorWithin_mono d (by use n) ht
+  exact Preorder.le_trans (taylorWithinEval rexp d univ 0 c) (taylorWithinEval rexp d univ 0 t) (rexp t) this foo
 
 end Smt.Reconstruct.Real.TransFns
 
