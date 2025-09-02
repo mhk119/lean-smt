@@ -24,3 +24,4 @@ import Smt.Reconstruct.Real.TransFns.ArithTransSineShift
 import Smt.Reconstruct.Real.TransFns.ArithTransSineSymmetry
 import Smt.Reconstruct.Real.TransFns.ArithTransSineTangentPi
 import Smt.Reconstruct.Real.TransFns.ArithTransSineTangentZero
+import Smt.Reconstruct.Real.TransFns.ExpTaylorComp

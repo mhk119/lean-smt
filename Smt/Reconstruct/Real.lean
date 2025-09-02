@@ -605,6 +605,33 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
     let s : Q(Real) := q(Classical.epsilon (TransFns.shift_prop_part $x))
     let y : Q(Real) := q(Classical.epsilon (TransFns.shift_prop $x $s))
     addThm q(TransFns.shift_prop $x $s $y) q(TransFns.arithTransSineShift₁ $x)
+  | .ARITH_TRANS_EXP_APPROX_BELOW =>
+    let d : Q(Int) ← reconstructTerm pf.getArguments[0]!
+    /- let some c ← reconstructRat pf.getArguments[1]! | throwError "impossible 1" -/
+    let c : Q(Real) ← reconstructTerm pf.getArguments[1]!
+    let t : Q(Real) ← reconstructTerm pf.getArguments[1]!
+    let w : Q(Real) ← reconstructTerm (pf.getResult[1]!)[1]! -- rational value of the taylor polynomial
+    let prop : Q(Prop) := q(Real.exp $t ≥ taylorWithinEval Real.exp (2 * (Int.natAbs $d) - 1) Set.univ 0 $c)
+    let pf_rat_val ← Meta.mkAppM ``TransFns.expEmbedding #[q(2 * (Int.natAbs $d) - 1), c]
+    let goal : Q(Prop) := q(taylorWithinEval Real.exp (2 * (Int.natAbs $d) - 1) Set.univ 0 $c = $w)
+    let (.mvar mv) ← Meta.mkFreshExprMVar (some goal) | throwError "impossible 2"
+    let { eNew, eqProof, mvarIds := _ } ← mv.rewrite q(taylorWithinEval Real.exp (2 * (Int.natAbs $d) - 1) Set.univ 0 $c = $w) pf_rat_val
+    let mv' ← mv.replaceTargetEq eNew eqProof
+    normNumFactorial mv'
+
+    let odd_d : Q(Prop) := q((2 : Nat) * (Int.natAbs $d) - 1 = 2 * (Int.natAbs $d - 1) + 1)
+    let (.mvar mv3) ← Meta.mkFreshExprMVar (some odd_d) | throwError "impossible 3"
+    Real.normNum mv3
+
+    let pf ← Meta.mkAppM ``TransFns.arithTransExpApproxBelow' #[t, c, w, q(2 * (Int.natAbs $d) - 1), q((Int.natAbs $d) - 1), Expr.mvar mv, Expr.mvar mv3]
+    addThm prop pf
   | _ => return none
+where
+normNumFactorial (mv : MVarId) : MetaM Unit := withTraceNode `smt.reconstruct.normNum traceArithNormNum do
+  let simpTheorems : Meta.SimpTheorems ← Meta.getSimpTheorems
+  let simpTheorems ← simpTheorems.addDeclToUnfold `Nat.factorial
+  let ctx ← Meta.Simp.mkContext (simpTheorems := #[simpTheorems])
+  if let some (_, mv) ← Mathlib.Meta.NormNum.normNumAt mv ctx #[] true true then
+    throwError "[norm_num]: could not prove {← mv.getType}"
 
 end Smt.Reconstruct.Real
