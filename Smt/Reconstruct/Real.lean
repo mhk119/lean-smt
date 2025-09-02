@@ -148,6 +148,10 @@ def reconstructReal : TermReconstructor := fun t => do match t.getKind with
     if t.getSort.isInteger then return none
     let x : Q(Real) ← reconstructTerm t[0]!
     return q(Real.sin $x)
+  | .COSINE =>
+    if t.getSort.isInteger then return none
+    let x : Q(Real) ← reconstructTerm t[0]!
+    return q(Real.cos $x)
   | .PI => return q(Real.pi)
   | _ => return none
 where
@@ -607,23 +611,23 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
     addThm q(TransFns.shift_prop $x $s $y) q(TransFns.arithTransSineShift₁ $x)
   | .ARITH_TRANS_EXP_APPROX_BELOW =>
     let d : Q(Int) ← reconstructTerm pf.getArguments[0]!
-    /- let some c ← reconstructRat pf.getArguments[1]! | throwError "impossible 1" -/
     let c : Q(Real) ← reconstructTerm pf.getArguments[1]!
     let t : Q(Real) ← reconstructTerm pf.getArguments[1]!
     let w : Q(Real) ← reconstructTerm (pf.getResult[1]!)[1]! -- rational value of the taylor polynomial
-    let prop : Q(Prop) := q(Real.exp $t ≥ taylorWithinEval Real.exp (2 * (Int.natAbs $d) - 1) Set.univ 0 $c)
-    let pf_rat_val ← Meta.mkAppM ``TransFns.expEmbedding #[q(2 * (Int.natAbs $d) - 1), c]
-    let goal : Q(Prop) := q(taylorWithinEval Real.exp (2 * (Int.natAbs $d) - 1) Set.univ 0 $c = $w)
+    let poly_deg : Q(Nat) := q((2 : Nat) * (Int.natAbs $d) - 1)
+    let pf_rat_val ← Meta.mkAppM ``TransFns.expEmbedding #[poly_deg, c]
+    let goal : Q(Prop) := q(taylorWithinEval Real.exp $poly_deg Set.univ 0 $c = $w)
     let (.mvar mv) ← Meta.mkFreshExprMVar (some goal) | throwError "impossible 2"
-    let { eNew, eqProof, mvarIds := _ } ← mv.rewrite q(taylorWithinEval Real.exp (2 * (Int.natAbs $d) - 1) Set.univ 0 $c = $w) pf_rat_val
+    let { eNew, eqProof, mvarIds := _ } ← mv.rewrite q(taylorWithinEval Real.exp $poly_deg Set.univ 0 $c = $w) pf_rat_val
     let mv' ← mv.replaceTargetEq eNew eqProof
     normNumFactorial mv'
 
-    let odd_d : Q(Prop) := q((2 : Nat) * (Int.natAbs $d) - 1 = 2 * (Int.natAbs $d - 1) + 1)
-    let (.mvar mv3) ← Meta.mkFreshExprMVar (some odd_d) | throwError "impossible 3"
-    Real.normNum mv3
+    let poly_deg_is_odd : Q(Prop) := q($poly_deg = 2 * (Int.natAbs $d - 1) + 1)
+    let (.mvar poly_deg_is_odd_pf) ← Meta.mkFreshExprMVar (some poly_deg_is_odd) | throwError "impossible 3"
+    Real.normNum poly_deg_is_odd_pf
 
-    let pf ← Meta.mkAppM ``TransFns.arithTransExpApproxBelow' #[t, c, w, q(2 * (Int.natAbs $d) - 1), q((Int.natAbs $d) - 1), Expr.mvar mv, Expr.mvar mv3]
+    let prop : Q(Prop) := q(Real.exp $t ≥ taylorWithinEval Real.exp $poly_deg Set.univ 0 $c)
+    let pf ← Meta.mkAppM ``TransFns.arithTransExpApproxBelow' #[t, c, w, q(2 * (Int.natAbs $d) - 1), q((Int.natAbs $d) - 1), Expr.mvar mv, Expr.mvar poly_deg_is_odd_pf]
     addThm prop pf
   | _ => return none
 where
