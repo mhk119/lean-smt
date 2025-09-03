@@ -629,6 +629,21 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
     let prop : Q(Prop) := q(Real.exp $t ≥ taylorWithinEval Real.exp $poly_deg Set.univ 0 $c)
     let pf ← Meta.mkAppM ``TransFns.arithTransExpApproxBelow' #[t, c, w, q(2 * (Int.natAbs $d) - 1), q((Int.natAbs $d) - 1), Expr.mvar mv, Expr.mvar poly_deg_is_odd_pf]
     addThm prop pf
+  | .ARITH_TRANS_EXP_APPROX_ABOVE_POS =>
+    let d : Q(Int) ← reconstructTerm pf.getArguments[0]!
+    let t : Q(Real) ← reconstructTerm pf.getArguments[1]!
+    let l : Q(Real) ← reconstructTerm pf.getArguments[2]!
+    let u : Q(Real) ← reconstructTerm pf.getArguments[3]!
+    dbg_trace "d = {d}"
+    dbg_trace "t = {t}"
+    dbg_trace "l = {l}"
+    dbg_trace "u = {u}"
+    dbg_trace "conclusion: {pf.getResult}"
+    /- let some w  ← reconstructRat (pf.getResult[1]!)[1]! | throwError "impossible" -/
+    /- let b ← Meta.isDefEq w q((986409 : Rat) / 362879) -/
+    /- dbg_trace "b = {b}" -/
+    /- dbg_trace "w' = {(pf.getResult[1]!)[1]!}" -/
+    return none
   | _ => return none
 where
 normNumFactorial (mv : MVarId) : MetaM Unit := withTraceNode `smt.reconstruct.normNum traceArithNormNum do
