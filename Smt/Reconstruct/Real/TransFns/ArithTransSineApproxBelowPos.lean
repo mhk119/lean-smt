@@ -82,7 +82,6 @@ theorem arithTransSineApproxBelowPos (d k : ℕ) (hd : d = 4 * k + 3) (t l u : �
     sin t ≥ ((p l - p u) / (l - u)) * (t - l) + p l := by
   intro p
   have hp : ∀ x, p x = taylorWithinEval Real.sin d Set.univ 0 x := fun _ => rfl
-
   exact ge_concave_of_ge (l := l) (u := u) (t := t) (p := p) (f := sin) (s := Icc l u) ht
         (by rw [hp]; exact sineApproxBelowPos d k hd hl (by linarith))
         (by rw [hp]; exact sineApproxBelowPos d k hd (by linarith) hu)
@@ -96,5 +95,36 @@ theorem arithTransSineApproxBelowPos (d k : ℕ) (hd : d = 4 * k + 3) (t l u : �
         )
         (by simp; linarith)
         (by simp; linarith)
+
+theorem arithTransSineApproxBelowPos' (d k : ℕ) (hd : d = 4 * k + 3) (t l u : ℝ) (ht : l ≤ t ∧ t ≤ u)
+    (hl : 0 < l) (hu : u ≤ Real.pi) :
+    let p : ℝ → ℝ := fun x => taylorWithinEval Real.sin d Set.univ 0 x - (x ^ (d + 1) / (d + 1).factorial)
+    sin t ≥ ((p l - p u) / (l - u)) * (t - l) + p l := by
+  intro p
+  have hp : ∀ x, p x = taylorWithinEval Real.sin d Set.univ 0 x - (x ^ (d + 1) / (d + 1).factorial) := fun _ => rfl
+  have : ∀ x, p x ≤ taylorWithinEval Real.sin d Set.univ 0 x := by
+    intro x
+    rw [hp]
+    simp
+    have : Even (d + 1) := by
+      rw [hd]
+      use (2 * k + 2)
+      ring
+    have h1 : 0 ≤ x ^ (d + 1) := Even.pow_nonneg this x
+    have : (0 : Real) ≤ (d + 1).factorial := Nat.cast_nonneg' (d + 1).factorial
+    exact div_nonneg h1 this
+  apply ge_concave_of_ge (l := l) (u := u) (t := t) (p := p) (f := sin) (s := Icc l u) ht
+  · apply le_trans (this l)
+    exact sineApproxBelowPos d k hd hl (by linarith)
+  · apply le_trans (this u)
+    exact sineApproxBelowPos d k hd (by linarith) hu
+  · apply concaveIccSubset (f := sin) (l2 := 0) (r2 := Real.pi) concaveOn_sin_Icc
+    · simp [Icc]
+      intros a h1 h2
+      constructor
+      · exact le_of_lt (lt_of_lt_of_le hl h1)
+      · exact le_trans h2 hu
+  · simp; linarith
+  · simp; linarith
 
 end Smt.Reconstruct.Real.TransFns
