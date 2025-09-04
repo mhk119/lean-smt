@@ -16,6 +16,7 @@ import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Data.Complex.Exponential
 
 import Smt.Reconstruct.Real.TransFns.ArithTransExpApproxBelow
+import Smt.Reconstruct.Real.TransFns.ExpTaylorComp
 
 open Set Real
 
@@ -81,5 +82,11 @@ theorem arithTransExpApproxAboveNeg (d k : Nat) (hd : d = 2*k) (l u t : ℝ) (ht
         (by rw [hp]; exact expApproxAbove d k hd (lt_of_le_of_lt (le_trans ht.1 ht.2) hu))
         (by rw [hp]; exact expApproxAbove d k hd hu)
         convexOn_exp (Set.mem_univ _) (Set.mem_univ _)
+
+theorem arithTransExpApproxAboveNeg' (d k : Nat) (l u t : ℝ) (evalL evalU : ℝ) (hl : taylorWithinEval Real.exp d Set.univ 0 l = evalL) (hu : taylorWithinEval Real.exp d Set.univ 0 u = evalU) (hd : d = 2 * k) (hu' : u < 0):
+  t ≥ l ∧ t ≤ u → Real.exp t ≤ evalL + ((evalL - evalU) / (l - u)) * (t - l) := by
+  intro ht
+  rw [add_comm, <- hl, <- hu]
+  exact arithTransExpApproxAboveNeg d k hd l u t ht hu'
 
 end Smt.Reconstruct.Real.TransFns

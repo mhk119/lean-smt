@@ -609,6 +609,9 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
     let s : Q(Real) := q(Classical.epsilon (TransFns.shift_prop_part $x))
     let y : Q(Real) := q(Classical.epsilon (TransFns.shift_prop $x $s))
     addThm q(TransFns.shift_prop $x $s $y) q(TransFns.arithTransSineShift₁ $x)
+  | .ARITH_TRANS_EXP_POSITIVITY =>
+    let t : Q(Real) ← reconstructTerm pf.getArguments[0]!
+    addThm q(Real.exp $t > 0) q(TransFns.arithTransExpPositivity $t)
   | .ARITH_TRANS_EXP_APPROX_BELOW =>
     let d : Q(Int) ← reconstructTerm pf.getArguments[0]!
     let c : Q(Real) ← reconstructTerm pf.getArguments[1]!
@@ -627,23 +630,61 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
     Real.normNum poly_deg_is_odd_pf
 
     let prop : Q(Prop) := q(Real.exp $t ≥ taylorWithinEval Real.exp $poly_deg Set.univ 0 $c)
-    let pf ← Meta.mkAppM ``TransFns.arithTransExpApproxBelow' #[t, c, w, q(2 * (Int.natAbs $d) - 1), q((Int.natAbs $d) - 1), Expr.mvar mv, Expr.mvar poly_deg_is_odd_pf]
-    addThm prop pf
+    let proof ← Meta.mkAppM ``TransFns.arithTransExpApproxBelow' #[t, c, w, q(2 * (Int.natAbs $d) - 1), q((Int.natAbs $d) - 1), Expr.mvar mv, Expr.mvar poly_deg_is_odd_pf]
+    addThm prop proof
   | .ARITH_TRANS_EXP_APPROX_ABOVE_POS =>
-    let d : Q(Int) ← reconstructTerm pf.getArguments[0]!
-    let t : Q(Real) ← reconstructTerm pf.getArguments[1]!
-    let l : Q(Real) ← reconstructTerm pf.getArguments[2]!
-    let u : Q(Real) ← reconstructTerm pf.getArguments[3]!
-    dbg_trace "d = {d}"
-    dbg_trace "t = {t}"
-    dbg_trace "l = {l}"
-    dbg_trace "u = {u}"
-    dbg_trace "conclusion: {pf.getResult}"
+    /- let d : Q(Int) ← reconstructTerm pf.getArguments[0]! -/
+    /- let t : Q(Real) ← reconstructTerm pf.getArguments[1]! -/
+    /- let l : Q(Real) ← reconstructTerm pf.getArguments[2]! -/
+    /- let u : Q(Real) ← reconstructTerm pf.getArguments[3]! -/
+    /- dbg_trace "d = {d}" -/
+    /- dbg_trace "t = {t}" -/
+    /- dbg_trace "l = {l}" -/
+    /- dbg_trace "u = {u}" -/
+    /- dbg_trace "conclusion: {pf.getResult}" -/
     /- let some w  ← reconstructRat (pf.getResult[1]!)[1]! | throwError "impossible" -/
     /- let b ← Meta.isDefEq w q((986409 : Rat) / 362879) -/
     /- dbg_trace "b = {b}" -/
     /- dbg_trace "w' = {(pf.getResult[1]!)[1]!}" -/
     return none
+  | .ARITH_TRANS_EXP_APPROX_ABOVE_NEG =>
+    /- dbg_trace "pf.getResult = {pf.getResult}" -/
+    /- dbg_trace "pf.getResult[1][1] = {(pf.getResult[1]!)[1]!}" -/
+    /- dbg_trace "pf.getResult[1][1][1][0][0][1] = {(((((pf.getResult[1]!)[1]!)[1]!)[0]!)[0]!)[1]!}" -/
+    let evalL : Q(Real) ← reconstructTerm ((pf.getResult[1]!)[1]!)[0]!
+    let evalU : Q(Real) ← reconstructTerm (((((pf.getResult[1]!)[1]!)[1]!)[0]!)[0]!)[1]!
+    let d : Q(Int) ← reconstructTerm pf.getArguments[0]!
+    let t : Q(Real) ← reconstructTerm pf.getArguments[1]!
+    let l : Q(Real) ← reconstructTerm pf.getArguments[2]!
+    let u : Q(Real) ← reconstructTerm pf.getArguments[3]!
+    let d_nat : Q(Nat) := q(Int.natAbs $d)
+    let d_half : Q(Nat) := q(Nat.div $d_nat 2)
+    let pf_rat_val_l ← Meta.mkAppM ``TransFns.expEmbedding #[d_nat, l]
+    let pf_rat_val_u ← Meta.mkAppM ``TransFns.expEmbedding #[d_nat, u]
+
+    let goalL : Q(Prop) := q(taylorWithinEval Real.exp $d_nat Set.univ 0 $l = $evalL)
+    let (.mvar mvL) ← Meta.mkFreshExprMVar (some goalL) | throwError "impossible 2"
+    let { eNew, eqProof, mvarIds := _ } ← mvL.rewrite q(taylorWithinEval Real.exp $d_nat Set.univ 0 $l = $evalL) pf_rat_val_l
+    let mvL' ← mvL.replaceTargetEq eNew eqProof
+    normNumFactorial mvL'
+
+    let goalU : Q(Prop) := q(taylorWithinEval Real.exp $d_nat Set.univ 0 $u = $evalU)
+    let (.mvar mvU) ← Meta.mkFreshExprMVar (some goalU) | throwError "impossible 2"
+    let { eNew, eqProof, mvarIds := _ } ← mvU.rewrite q(taylorWithinEval Real.exp $d_nat Set.univ 0 $u = $evalU) pf_rat_val_u
+    let mvU' ← mvU.replaceTargetEq eNew eqProof
+    normNumFactorial mvU'
+
+    let goalDeg : Q(Prop) := q($d_nat = 2 * $d_half)
+    let (.mvar goalDeg_pf) ← Meta.mkFreshExprMVar (some goalDeg) | throwError "impossible 3"
+    normNumFactorial goalDeg_pf
+
+    let uNeg : Q(Prop) := q($u < 0)
+    let (.mvar uNeg_pf) ← Meta.mkFreshExprMVar (some uNeg) | throwError "impossible 4"
+    Real.normNum uNeg_pf
+
+    let prop : Q(Prop) ← reconstructTerm pf.getResult
+    let proof ← Meta.mkAppM ``TransFns.arithTransExpApproxAboveNeg' #[d_nat, d_half, l, u, t, evalL, evalU, .mvar mvL, .mvar mvU, .mvar goalDeg_pf, .mvar uNeg_pf]
+    addThm prop proof
   | _ => return none
 where
 normNumFactorial (mv : MVarId) : MetaM Unit := withTraceNode `smt.reconstruct.normNum traceArithNormNum do
