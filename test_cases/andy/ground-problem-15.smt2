@@ -2,9 +2,9 @@
 (set-info :source |printed by MathSAT|)
 
 (declare-fun |ln{9}| () Real)
-(assert (let ((.def_21 (<= |ln{9}| (/ 1.0 4.0))))
+(assert (let ((.def_21 (<= |ln{9}| (/ 1 4))))
 (let ((.def_19 (exp |ln{9}|)))
-(let ((.def_20 (= .def_19 (/ 4.0 3.0))))
+(let ((.def_20 (= .def_19 (/ 4 3))))
 (let ((.def_22 (and .def_20 .def_21)))
 .def_22)))))
 (check-sat)

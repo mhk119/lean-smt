@@ -1,0 +1,8 @@
+(set-logic ALL)
+(declare-fun x () Real)
+(declare-fun y () Real)
+(declare-fun z () Real)
+(assert (= (+ (sin x) (sin y)) 0.5))
+(assert (= (+ (sin x) (sin z)) 0.5))
+(assert (or (= (sin x) (- (sin y))) (= (sin x) (- (sin z)))))
+(check-sat)
