@@ -17,4 +17,7 @@ namespace Smt.Reconstruct.Real.TransFns
 theorem arithTransExpNeg (t : ℝ) : t < 0 ↔ Real.exp t < 1 :=
   Iff.comm.mp Real.exp_lt_one_iff
 
+theorem arithTransExpNeg' (t : ℝ) : (t < 0) = (Real.exp t < 1) :=
+  propext (Iff.comm.mp Real.exp_lt_one_iff)
+
 end Smt.Reconstruct.Real.TransFns

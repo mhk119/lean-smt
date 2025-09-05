@@ -612,6 +612,18 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
   | .ARITH_TRANS_EXP_POSITIVITY =>
     let t : Q(Real) ← reconstructTerm pf.getArguments[0]!
     addThm q(Real.exp $t > 0) q(TransFns.arithTransExpPositivity $t)
+  /- | .ARITH_TRANS_SINE_TANGENT_ZERO => -/
+  /-   let t : Q(Real) ← reconstructTerm pf.getArguments[0]! -/
+  /-   addThm q(($t > 0 → Real.sin $t < $t) ∧ ($t < 0 → Real.sin $t > $t)) q(TransFns.arithTransSinTangentZero $t) -/
+  | .ARITH_TRANS_EXP_SUPER_LIN =>
+    let t : Q(Real) ← reconstructTerm pf.getArguments[0]!
+    addThm q($t ≤ 0 ∨ Real.exp $t > $t + 1) q(TransFns.arithTransExpSuperLin $t)
+  | .ARITH_TRANS_EXP_NEG =>
+    let t : Q(Real) ← reconstructTerm pf.getArguments[0]!
+    addThm q(($t < 0) = (Real.exp $t < 1)) q(TransFns.arithTransExpNeg' $t)
+  | .ARITH_TRANS_SINE_BOUNDS =>
+    let t : Q(Real) ← reconstructTerm pf.getArguments[0]!
+    addThm q((Real.sin $t ≤ 1 ∧ Real.sin $t ≥ -1)) q(TransFns.arithTransSineBounds $t)
   | .ARITH_TRANS_EXP_APPROX_BELOW =>
     let d : Q(Int) ← reconstructTerm pf.getArguments[0]!
     let c : Q(Real) ← reconstructTerm pf.getArguments[1]!
