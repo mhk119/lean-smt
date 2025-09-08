@@ -611,9 +611,9 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
   | .ARITH_TRANS_EXP_POSITIVITY =>
     let t : Q(Real) ← reconstructTerm pf.getArguments[0]!
     addThm q(Real.exp $t > 0) q(TransFns.arithTransExpPositivity $t)
-  /- | .ARITH_TRANS_SINE_TANGENT_ZERO => -/
-  /-   let t : Q(Real) ← reconstructTerm pf.getArguments[0]! -/
-  /-   addThm q(($t > 0 → Real.sin $t < $t) ∧ ($t < 0 → Real.sin $t > $t)) q(TransFns.arithTransSinTangentZero $t) -/
+  | .ARITH_TRANS_SINE_TANGENT_ZERO =>
+    let t : Q(Real) ← reconstructTerm pf.getArguments[0]!
+    addThm q(($t > 0 → Real.sin $t < $t) ∧ ($t < 0 → Real.sin $t > $t)) q(TransFns.arithTransSinTangentZero $t)
   | .ARITH_TRANS_EXP_SUPER_LIN =>
     let t : Q(Real) ← reconstructTerm pf.getArguments[0]!
     addThm q($t ≤ 0 ∨ Real.exp $t > $t + 1) q(TransFns.arithTransExpSuperLin $t)
@@ -644,14 +644,6 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
     let proof ← Meta.mkAppM ``TransFns.arithTransExpApproxBelow' #[t, c, w, q(2 * (Int.natAbs $d) - 1), q((Int.natAbs $d) - 1), Expr.mvar mv, Expr.mvar poly_deg_is_odd_pf]
     addThm prop proof
   | .ARITH_TRANS_EXP_APPROX_ABOVE_POS =>
-    dbg_trace "ARITH_TRANS_EXP_APPROX_ABOVE_POS"
-    dbg_trace "d = {pf.getArguments[0]!}"
-    dbg_trace "t = {pf.getArguments[1]!}"
-    dbg_trace "result = {pf.getResult}"
-    /- dbg_trace "l = {pf.getArguments[2]!}" -/
-    /- dbg_trace "u = {pf.getArguments[3]!}" -/
-    /- dbg_trace "evalL = {((pf.getResult[1]!)[1]!)[0]!}" -/
-    /- dbg_trace "evalU = {(((((pf.getResult[1]!)[1]!)[1]!)[0]!)[0]!)[1]!}" -/
     let d : Q(Int) ← reconstructTerm pf.getArguments[0]!
     let t : Q(Real) ← reconstructTerm pf.getArguments[1]!
     let l : Q(Real) ← reconstructTerm pf.getArguments[2]!
