@@ -137,6 +137,14 @@ def normNum (mv : MVarId) : MetaM Unit := withTraceNode `smt.reconstruct.normNum
   if let some (_, mv) ← normNumAt mv (← Meta.Simp.mkContext) #[] true false then
     throwError "[norm_num]: could not prove {← mv.getType}"
 
+open Mathlib.Meta.NormNum in
+def normNumAbs (mv : MVarId) : MetaM Unit := withTraceNode `smt.reconstruct.normNum traceArithNormNum do
+  let simpTheorems : Meta.SimpTheorems ← Meta.getSimpTheorems
+  let simpTheorems ← simpTheorems.addDeclToUnfold `abs
+  let ctx ← Meta.Simp.mkContext (simpTheorems := #[simpTheorems])
+  if let some (_, mv) ← Mathlib.Meta.NormNum.normNumAt mv ctx #[] true true then
+    throwError "[norm_num]: could not prove {← mv.getType}"
+
 namespace Tactic
 
 syntax (name := polyNorm) "poly_norm" : tactic

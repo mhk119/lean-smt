@@ -481,14 +481,13 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
     let h : Q(Decidable ($t = $t')) ← Meta.synthInstance q(Decidable ($t = $t'))
     if !(h.getUsedConstants.any (isNoncomputable (← getEnv))) then
       return none
-    addTac q($t = $t') Real.normNum
+    addTac q($t = $t') Real.normNumAbs
   | .DSL_REWRITE
   | .THEORY_REWRITE => reconstructRewrite pf
   | .ARITH_SUM_UB =>
     if pf.getResult[0]!.getSort.isInteger then return none
     reconstructSumUB pf
   | .ARITH_MULT_ABS_COMPARISON =>
-    /- return none -/
     if pf.getResult[0]!.getSort.isInteger then return none
     reconstructMulAbsComparison pf
   | .INT_TIGHT_UB =>
@@ -645,6 +644,14 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
     let proof ← Meta.mkAppM ``TransFns.arithTransExpApproxBelow' #[t, c, w, q(2 * (Int.natAbs $d) - 1), q((Int.natAbs $d) - 1), Expr.mvar mv, Expr.mvar poly_deg_is_odd_pf]
     addThm prop proof
   | .ARITH_TRANS_EXP_APPROX_ABOVE_POS =>
+    dbg_trace "ARITH_TRANS_EXP_APPROX_ABOVE_POS"
+    dbg_trace "d = {pf.getArguments[0]!}"
+    dbg_trace "t = {pf.getArguments[1]!}"
+    dbg_trace "result = {pf.getResult}"
+    /- dbg_trace "l = {pf.getArguments[2]!}" -/
+    /- dbg_trace "u = {pf.getArguments[3]!}" -/
+    /- dbg_trace "evalL = {((pf.getResult[1]!)[1]!)[0]!}" -/
+    /- dbg_trace "evalU = {(((((pf.getResult[1]!)[1]!)[1]!)[0]!)[0]!)[1]!}" -/
     let d : Q(Int) ← reconstructTerm pf.getArguments[0]!
     let t : Q(Real) ← reconstructTerm pf.getArguments[1]!
     let l : Q(Real) ← reconstructTerm pf.getArguments[2]!
@@ -729,20 +736,26 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
     /- dbg_trace "u = {pf.getArguments[5]!}" -/
     return none
   | .ARITH_TRANS_SINE_APPROX_ABOVE_NEG =>
-    /- dbg_trace "d = {pf.getArguments[0]!}" -/
-    /- dbg_trace "t = {pf.getArguments[1]!}" -/
-    /- dbg_trace "lb = {pf.getArguments[2]!}" -/
-    /- dbg_trace "ub = {pf.getArguments[3]!}" -/
-    /- dbg_trace "l = {pf.getArguments[4]!}" -/
-    /- dbg_trace "u = {pf.getArguments[5]!}" -/
-    return none
-  | .ARITH_TRANS_SINE_APPROX_BELOW_POS =>
+    dbg_trace "[[SINE_APPROX_ABOVE_NEG]]"
     dbg_trace "d = {pf.getArguments[0]!}"
     dbg_trace "t = {pf.getArguments[1]!}"
     dbg_trace "lb = {pf.getArguments[2]!}"
     dbg_trace "ub = {pf.getArguments[3]!}"
     dbg_trace "l = {pf.getArguments[4]!}"
     dbg_trace "u = {pf.getArguments[5]!}"
+    let t ← reconstructTerm pf.getArguments[1]!
+    dbg_trace "real t = {t}"
+    return none
+  | .ARITH_TRANS_SINE_APPROX_BELOW_POS =>
+    dbg_trace "[[SINE_APPROX_BELOW_POS]]"
+    dbg_trace "d = {pf.getArguments[0]!}"
+    dbg_trace "t = {pf.getArguments[1]!}"
+    dbg_trace "lb = {pf.getArguments[2]!}"
+    dbg_trace "ub = {pf.getArguments[3]!}"
+    dbg_trace "l = {pf.getArguments[4]!}"
+    dbg_trace "u = {pf.getArguments[5]!}"
+    let t ← reconstructTerm pf.getArguments[1]!
+    dbg_trace "real t = {t}"
     return none
   | .ARITH_TRANS_SINE_APPROX_BELOW_NEG =>
     /- dbg_trace "d = {pf.getArguments[0]!}" -/
