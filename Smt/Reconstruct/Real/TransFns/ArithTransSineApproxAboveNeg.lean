@@ -21,30 +21,30 @@ open Set Real
 
 namespace Smt.Reconstruct.Real.TransFns
 
-theorem sineApproxAboveNeg (d k : Nat) (hd : d = 4*k + 3) (hx : x < 0) (hx2 : -π ≤ x):
-  let p : ℕ → ℝ → ℝ := fun d => taylorWithinEval Real.sin d Set.univ 0
+example (a b : Real) (h : a ≤ b): a -b ≤ 0:= by
+  exact tsub_nonpos.mpr h
+
+theorem sineApproxAboveNeg (d k : Nat) (hd : d =2*k + 1) (hx : x < 0):
+  let p : ℕ → ℝ → ℝ := fun d x => taylorWithinEval Real.sin d Set.univ 0 x + (x ^ (d + 1)) / (d + 1).factorial
   sin x ≤ p d x := by
-  intro p
+  intro p; simp only [p]
   have ⟨x', hx', H⟩ := taylor_mean_remainder_lagrange₁ (n := d) hx contDiff_sin
   rw [taylorWithinEval_eq _ (right_mem_Icc.mpr (le_of_lt hx)) (uniqueDiffOn_Icc hx) (contDiff_sin)] at H
-
-  rw [←sub_nonpos, H]
+  rw [←sub_nonpos, sub_add_eq_sub_sub, H]
   rw [iteratedDerivWithin_eq_iteratedDeriv contDiff_sin (uniqueDiffOn_Icc hx) _ (Ioo_subset_Icc_self hx')]
-  have : (d+1)%4 = 0 := by simp [hd, Nat.add_mod]
-  simp only [this, iteratedDeriv_sin_cos, reduceIte, three_ne_zero, sub_zero, show 3 ≠ 1 by decide, show 3 ≠ 0 by decide, show 3 ≠ 2 by decide]
-  apply mul_nonpos_of_nonpos_of_nonneg _ (by apply inv_nonneg.mpr; simp)
-  apply mul_nonpos_of_nonpos_of_nonneg (Real.sin_nonpos_of_nonnpos_of_neg_pi_le (le_of_lt (mem_Ioo.mp hx').2) (le_trans hx2 (le_of_lt (mem_Ioo.mp hx').1)))
-  apply Even.pow_nonneg (by rw [even_iff_two_dvd]; omega)
+  rw [sub_zero, mul_div_assoc, ← sub_one_mul]
+  apply mul_nonpos_of_nonpos_of_nonneg _ _
+  · rw [tsub_nonpos]; apply iteratedDeriv_sin_le_one
+  · apply mul_nonneg (le_of_lt (Even.pow_pos (by rw [hd]; norm_num) (by linarith))) (by simp [Nat.factorial_pos (d + 1)])
 
-theorem arithTransSineApproxAboveNeg (d k : Nat) (hd : d = 4*k + 3) (l u t : ℝ)
+theorem arithTransSineApproxAboveNeg (d k : Nat) (hd : d = 2*k + 1) (l u t : ℝ)
                                      (ht : l ≤ t ∧ t ≤ u) (hu : u < 0) (hl : -π ≤ l) :
-  let p: ℝ → ℝ := taylorWithinEval Real.sin d Set.univ 0
+  let p: ℝ → ℝ := fun x => taylorWithinEval Real.sin d Set.univ 0 x + (x ^ (d + 1)) / (d + 1).factorial
   Real.sin t ≤ ((p l - p u) / (l - u)) * (t - l) + p l := by
-  intro p
-  have hp : ∀ x, p x = taylorWithinEval Real.sin d Set.univ 0 x := fun _ => rfl
+  intro p; simp only [p]
   apply le_convex_of_le ht
-        (by rw [hp]; exact sineApproxAboveNeg d k hd (by linarith) hl)
-        (by rw [hp]; exact sineApproxAboveNeg d k hd hu (by linarith))
+        (sineApproxAboveNeg d k hd (by linarith))
+        (sineApproxAboveNeg d k hd hu)
         convexOn_sin_Icc (mem_Icc.mpr ⟨hl, by linarith⟩)
                          (mem_Icc.mpr ⟨by linarith, le_of_lt hu⟩)
 
