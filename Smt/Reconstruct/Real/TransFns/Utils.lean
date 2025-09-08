@@ -50,6 +50,26 @@ theorem iteratedDeriv_sin_cos (n : Nat) :
     <;> ext
     <;> simp [iteratedDeriv_neg, ih]
 
+theorem neg_one_le_iteratedDeriv_sin (n : Nat) (x : Real) : -1 ≤ (iteratedDeriv n sin) x := by
+  have :=  Nat.mod_lt n (show 4 > 0 by decide)
+  interval_cases hn : n % 4
+  <;> simp [iteratedDeriv_sin_cos, hn, sin_le_one, neg_one_le_sin, cos_le_one, neg_one_le_cos]
+
+theorem iteratedDeriv_sin_le_one (n : Nat) (x : Real) : (iteratedDeriv n sin) x ≤ 1 := by
+  have :=  Nat.mod_lt n (show 4 > 0 by decide)
+  interval_cases hn : n % 4
+  <;> simp [iteratedDeriv_sin_cos, hn, sin_le_one, neg_one_le_sin, cos_le_one, neg_one_le_cos, neg_le]
+
+theorem neg_one_le_iteratedDeriv_cos (n : Nat) (x : Real) : -1 ≤ (iteratedDeriv n cos) x := by
+  have :=  Nat.mod_lt n (show 4 > 0 by decide)
+  interval_cases hn : n % 4
+  <;> simp [iteratedDeriv_sin_cos, hn, sin_le_one, neg_one_le_sin, cos_le_one, neg_one_le_cos]
+
+theorem iteratedDeriv_cos_le_one (n : Nat) (x : Real) : (iteratedDeriv n cos) x ≤ 1 := by
+  have :=  Nat.mod_lt n (show 4 > 0 by decide)
+  interval_cases hn : n % 4
+  <;> simp [iteratedDeriv_sin_cos, hn, sin_le_one, neg_one_le_sin, cos_le_one, neg_one_le_cos, neg_le]
+
 theorem iteratedDerivWithin_eq_iteratedDeriv {f : Real → Real} (hf : ContDiff Real (⊤ : ℕ∞) f) (hs : UniqueDiffOn Real s):
   ∀ x ∈ s, iteratedDerivWithin d f s x = iteratedDeriv d f x := by
   induction' d with d hd
