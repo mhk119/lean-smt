@@ -43,7 +43,8 @@ theorem arithTransSineTangentPi₂ : ∀ (t : ℝ),
   exact sin_lt e_pos
 
 theorem arithTransSineTangentPi : ∀ (t : ℝ),
-    (t > -Real.pi → sin t > -Real.pi - t) ∧ (t < Real.pi → sin t < Real.pi - t) := fun t =>
-  ⟨arithTransSineTangentPi₁ t, arithTransSineTangentPi₂ t⟩
+    (t > (-1) * Real.pi → sin t > (-1) * Real.pi - t) ∧ (t < Real.pi → sin t < Real.pi - t) := fun t =>
+  by simp only [neg_mul, one_mul, gt_iff_lt]
+     exact ⟨arithTransSineTangentPi₁ t, arithTransSineTangentPi₂ t⟩
 
 end Smt.Reconstruct.Real.TransFns

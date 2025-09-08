@@ -611,6 +611,9 @@ def reconstructRealProof : ProofReconstructor := fun pf => do match pf.getRule w
   | .ARITH_TRANS_EXP_POSITIVITY =>
     let t : Q(Real) ← reconstructTerm pf.getArguments[0]!
     addThm q(Real.exp $t > 0) q(TransFns.arithTransExpPositivity $t)
+  | .ARITH_TRANS_SINE_TANGENT_PI =>
+    let t : Q(Real) ← reconstructTerm pf.getArguments[0]!
+    addThm q(($t > (-1) * Real.pi → Real.sin $t > (-1) * Real.pi - $t) ∧ ($t < Real.pi → Real.sin $t < Real.pi - $t)) q(TransFns.arithTransSineTangentPi $t)
   | .ARITH_TRANS_SINE_TANGENT_ZERO =>
     let t : Q(Real) ← reconstructTerm pf.getArguments[0]!
     addThm q(($t > 0 → Real.sin $t < $t) ∧ ($t < 0 → Real.sin $t > $t)) q(TransFns.arithTransSinTangentZero $t)
