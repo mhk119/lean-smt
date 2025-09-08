@@ -152,6 +152,14 @@ def reconstructReal : TermReconstructor := fun t => do match t.getKind with
     if t.getSort.isInteger then return none
     let x : Q(Real) ← reconstructTerm t[0]!
     return q(Real.cos $x)
+  | .TANGENT =>
+    if t.getSort.isInteger then return none
+    let x : Q(Real) ← reconstructTerm t[0]!
+    return q(Real.tan $x)
+  | .COTANGENT =>
+    if t.getSort.isInteger then return none
+    let x : Q(Real) ← reconstructTerm t[0]!
+    return q(Real.cot $x)
   | .PI => return q(Real.pi)
   | _ => return none
 where
@@ -276,6 +284,22 @@ def reconstructRewrite (pf : cvc5.Proof) : ReconstructM (Option Expr) := do
     let t : Q(Real) ← reconstructTerm pf.getArguments[1]!
     let s : Q(Real) ← reconstructTerm pf.getArguments[2]!
     addThm q((ite ($t ≥ $s) $t $s ≥ $s) = True) q(@Rewrite.max_geq2 $t $s)
+  | .ARITH_SINE_ZERO =>
+    addThm q(Real.sin 0 = 0) q(Rewrite.arith_sine_zero)
+  | .ARITH_SINE_PI2 =>
+    addThm q(Real.sin ((1 / 2) * Real.pi) = 1) q(Rewrite.arith_sine_pi2)
+  | .ARITH_COSINE_ELIM =>
+    if pf.getArguments[1]!.getSort.isInteger then return none
+    let t : Q(Real) ← reconstructTerm pf.getArguments[1]!
+    addThm q(Real.cos $t = Real.sin ((1 / 2) * Real.pi - $t)) q(Rewrite.arith_cosine_elim $t)
+  | .ARITH_TANGENT_ELIM =>
+    if pf.getArguments[1]!.getSort.isInteger then return none
+    let t : Q(Real) ← reconstructTerm pf.getArguments[1]!
+    addThm q(Real.tan $t = Real.sin $t / Real.cos $t) q(Rewrite.arith_tangent_elim $t)
+  | .ARITH_COTANGENT_ELIM =>
+    if pf.getArguments[1]!.getSort.isInteger then return none
+    let t : Q(Real) ← reconstructTerm pf.getArguments[1]!
+    addThm q(Real.cot $t = Real.cos $t / Real.sin $t) q(Rewrite.arith_cotangent_elim $t)
   | _ => return none
 
 def reconstructSumUB (pf : cvc5.Proof) : ReconstructM (Option Expr) := do

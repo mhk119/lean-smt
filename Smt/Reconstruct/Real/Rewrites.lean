@@ -116,6 +116,6 @@ theorem arith_cosine_elim (x : Real) : Real.cos x = Real.sin ((1/2) * Real.pi - 
 theorem arith_tangent_elim (x : Real) : Real.tan x = Real.sin x / Real.cos x := Real.tan_eq_sin_div_cos x
 theorem arith_cotangent_elim (x : Real) : Real.cot x = Real.cos x / Real.sin x := Real.cot_eq_cos_div_sin x
 
--- secant and cossecant?
+-- TODO: Secant and cosecant. There is no definition for those in mathlib. Should we define our own?
 
 end Smt.Reconstruct.Real.Rewrite
