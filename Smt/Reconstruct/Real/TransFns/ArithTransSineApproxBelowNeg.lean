@@ -16,7 +16,7 @@ open Set Real
 
 namespace Smt.Reconstruct.Real.TransFns
 
-theorem arithTransSineApproxBelowNeg (d k : Nat) (hd : d = 2*k + 1) (hx : x ≤ 0) :
+theorem arithTransSineApproxBelowNeg_self (d k : Nat) (hd : d = 2*k + 1) (hx : x ≤ 0) :
   taylorWithinEval Real.sin d Set.univ 0 x - x ^ (d + 1) / (d + 1).factorial ≤ sin x := by
   cases' lt_or_eq_of_le hx with hx hx
   · have ⟨x', hx', H⟩ := taylor_mean_remainder_lagrange₁ (n := d) hx contDiff_sin
@@ -28,5 +28,19 @@ theorem arithTransSineApproxBelowNeg (d k : Nat) (hd : d = 2*k + 1) (hx : x ≤ 
     · rw [←neg_le_iff_add_nonneg', neg_le]; apply neg_one_le_iteratedDeriv_sin
     · apply mul_nonneg (le_of_lt (Even.pow_pos (by rw [hd]; norm_num) (by linarith))) (by simp [Nat.factorial_pos (d + 1)])
   · simp [hx]
+
+theorem arithTransSineApproxBelowNeg (d k : ℕ) (hd : d = 2*k + 1)
+                                     (hl : -π ≤ lb) (hu : ub ≤ 0)
+                                     (hx1 : lb ≤ x) (hx2 : x ≤ ub)
+                                     (hc : c = if -π/2 < lb then lb else if - π/2 < ub then - π/2 else ub) :
+  taylorWithinEval Real.sin d Set.univ 0 c - c ^ (d + 1) / (d + 1).factorial ≤ sin x := by
+  have : c ≤ 0 := by split_ifs at hc <;> linarith
+  apply le_trans (arithTransSineApproxBelowNeg_self d k hd this)
+  split_ifs at hc with h1 h2
+  · apply sin_le_sin_of_le_of_le_pi_div_two <;> linarith
+  · rw [hc, neg_div, sin_neg, sin_pi_div_two]; apply neg_one_le_sin
+  · rw [←neg_le_neg_iff, ←sin_neg c, ←sin_neg, ←sin_pi_sub, ←sin_pi_sub (-c)]
+    apply sin_le_sin_of_le_of_le_pi_div_two <;> linarith
+
 
 end Smt.Reconstruct.Real.TransFns

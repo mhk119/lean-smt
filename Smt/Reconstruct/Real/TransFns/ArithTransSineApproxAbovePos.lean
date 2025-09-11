@@ -16,11 +16,11 @@ open Set Real
 
 namespace Smt.Reconstruct.Real.TransFns
 
-theorem arithTransSineApproxAbovePos' (d k : ℕ) (hd : d = 2*k + 1)
+theorem arithTransSineApproxAbovePos_self (d k : ℕ) (hd : d = 2*k + 1)
                                      (hx1 : 0 ≤ x) :
     Real.sin x ≤ taylorWithinEval Real.sin d Set.univ 0 x + x ^ (d + 1) / (d + 1).factorial := by
   rw [← neg_neg x, sin_neg, taylorSin_neg, neg_add_eq_sub, ←neg_sub, neg_le_neg_iff, Even.neg_pow (by rw [hd]; norm_num)]
-  apply arithTransSineApproxBelowNeg d k hd (by linarith)
+  apply arithTransSineApproxBelowNeg_self d k hd (by linarith)
 
 
 theorem arithTransSineApproxAbovePos (d k : ℕ) (hd : d = 2*k + 1)
@@ -29,7 +29,7 @@ theorem arithTransSineApproxAbovePos (d k : ℕ) (hd : d = 2*k + 1)
                                      (hc : c = if ub < π/2 then ub else if lb < π/2 then π/2 else lb) :
     Real.sin x ≤ taylorWithinEval Real.sin d Set.univ 0 c + c ^ (d + 1) / (d + 1).factorial := by
   have : 0 ≤ c := by split_ifs at hc <;> linarith
-  apply le_trans _ (arithTransSineApproxAbovePos' d k hd this)
+  apply le_trans _ (arithTransSineApproxAbovePos_self d k hd this)
   split_ifs at hc with h1 h2
   · apply sin_le_sin_of_le_of_le_pi_div_two <;> linarith
   · rw [hc, sin_pi_div_two]; apply sin_le_one
