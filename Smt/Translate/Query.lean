@@ -50,8 +50,11 @@ def addDependency (e e' : Expr) : QueryBuilderM Unit :=
 When `fvarDeps = false`, we filter out dependencies on fvars. -/
 def translateAndFindDeps (e : Expr) (fvarDeps := true) : QueryBuilderM (Term × Array Expr) := do
   let (tm, depConsts, depFVars) ← Translator.translateExpr e
-  let unknownConsts := depConsts.toArray.filterMap fun nm =>
-    if Util.smtConsts.contains nm.toString then none else some (mkConst nm)
+  let unknownConsts ← depConsts.toArray.foldlM (init := #[]) fun acc nm => do
+    if Util.smtConsts.contains nm.toString then
+      return acc
+    else
+      return acc.push (← mkConstWithLevelParams nm)
   if fvarDeps then
     let fvs := depFVars.toArray.map mkFVar
     return (tm, fvs ++ unknownConsts)
@@ -135,41 +138,42 @@ def addDefineCommandFor (nm : String) (e : Expr) (params : Array Expr) (cod : Ex
 def addDeclareCommandFor (nm : String) (e tp : Expr) (params : Array Expr) (cod : Expr)
     : QueryBuilderM (Array Expr) := do
   if cod.isSort && !cod.isProp then
-    -- For simple (non-parametric) inductive types, emit a
+    -- For simple (possibly parametric) inductive types, emit a
     -- `declare-datatypes` command so the solver has full algebraic datatype support.
-    if params.isEmpty then
-      if let some cname := e.constName? then
-        if let some (.inductInfo iVal) := (← getEnv).find? cname then
-          if iVal.numParams == 0 && iVal.numIndices == 0 then
-            -- Build the list of constructor declarations with field selectors.
-            let mut allDeps : Array Expr := #[]
-            let mut ctorDecls : List (String × List (String × Term)) := []
-            let mut allOk := true
-            for ctorNm in iVal.ctors do
-              match (← getEnv).find? ctorNm with
-              | some (.ctorInfo cVal) =>
-                let fields := ctorFieldTypes cVal.numFields cVal.type
-                let mut fieldDecls : List (String × Term) := []
-                let mut selectorNames : Std.HashSet String := {}
-                let mut idx := 0
-                for (fname, ftype) in fields do
-                  let baseName :=
-                    if fname == Name.anonymous then s!"field{idx + 1}" else fname.toString
-                  let mut selectorName := s!"{ctorNm}.{baseName}"
-                  let mut suffix := 1
-                  while selectorNames.contains selectorName do
-                    selectorName := s!"{ctorNm}.{baseName}_{suffix}"
-                    suffix := suffix + 1
-                  selectorNames := selectorNames.insert selectorName
-                  let (tmSort, deps) ← translateAndFindDeps ftype (fvarDeps := false)
-                  fieldDecls := fieldDecls ++ [(selectorName, tmSort)]
-                  allDeps := allDeps ++ deps
-                  idx := idx + 1
-                ctorDecls := ctorDecls ++ [(ctorNm.toString, fieldDecls)]
-              | _ => allOk := false
-            if allOk then
-              addCommand e <| .declareDatatypes [(nm, 0)] [ctorDecls]
-              return allDeps
+    if let some cname := e.constName? then
+      if let some (.inductInfo iVal) := (← getEnv).find? cname then
+        if iVal.numIndices == 0 && params.size == iVal.numParams then
+          -- Build the list of constructor declarations with field selectors.
+          let mut allDeps : Array Expr := #[]
+          let mut ctorDecls : List (String × List (String × Term)) := []
+          let mut allOk := true
+          for ctorNm in iVal.ctors do
+            match (← getEnv).find? ctorNm with
+            | some (.ctorInfo cVal) =>
+              let fields ← ctorFields params iVal.numParams cVal.numFields cVal.type
+              let mut fieldDecls : List (String × Term) := []
+              let mut selectorNames : Std.HashSet String := {}
+              let mut idx := 0
+              for (fname, ftype) in fields do
+                let baseName :=
+                  if fname == Name.anonymous then s!"field{idx + 1}" else fname.toString
+                let mut selectorName := s!"{ctorNm}.{baseName}"
+                let mut suffix := 1
+                while selectorNames.contains selectorName do
+                  selectorName := s!"{ctorNm}.{baseName}_{suffix}"
+                  suffix := suffix + 1
+                selectorNames := selectorNames.insert selectorName
+                let (tmSort, deps) ← translateAndFindDeps ftype (fvarDeps := false)
+                fieldDecls := fieldDecls ++ [(selectorName, tmSort)]
+                allDeps := allDeps ++ deps
+                idx := idx + 1
+              ctorDecls := ctorDecls ++ [(ctorNm.toString, fieldDecls)]
+            | _ => allOk := false
+          if allOk then
+            let paramNames ← params.toList.mapM fun p => do
+              return (← getFVarLocalDecl p).userName.toString
+            addCommand e <| .declareDatatypes [(nm, iVal.numParams)] [(paramNames, ctorDecls)]
+            return allDeps
     addCommand e <| .declareSort nm params.size
     return #[]
   else
@@ -177,11 +181,15 @@ def addDeclareCommandFor (nm : String) (e tp : Expr) (params : Array Expr) (cod 
     addCommand e <| .declare nm tmTp
     return deps
 where
-  /-- Extract the first `n` field name/type pairs from a constructor's type (a chain of `forallE`). -/
-  ctorFieldTypes : Nat → Expr → List (Name × Expr)
-    | 0, _ => []
-    | n + 1, .forallE nm ftype body _ => (nm, ftype) :: ctorFieldTypes n body
-    | _, _ => []
+  /-- Extract constructor fields after skipping datatype parameters.
+  We use a telescope so field types can mention the skipped parameters. -/
+  ctorFields (params : Array Expr) (numParams numFields : Nat) (tp : Expr) : MetaM (List (Name × Expr)) := do
+    forallTelescopeReducing tp fun xs _ => do
+      let ctorParams := xs.extract 0 numParams
+      let fields := xs.extract numParams (numParams + numFields)
+      fields.toList.mapM fun field => do
+        let decl ← getFVarLocalDecl field
+        return (decl.userName, decl.type.replaceFVars ctorParams params)
 
 /-- Build the command for `e : tp` and add it to the graph. Return the command's dependencies. -/
 def addCommandFor (e tp : Expr) : QueryBuilderM (Array Expr) := do

@@ -21,7 +21,7 @@ inductive Command where
   | defineSort (nm : String) (ps : List Term) (tm : Term)
   | declare (nm : String) (st : Term)
   | declareDatatypes (sorts : List (String × Nat))
-      (dtypes : List (List (String × List (String × Term))))
+      (dtypes : List (List String × List (String × List (String × Term))))
   | defineFun (nm : String) (ps : List (String × Term)) (cod : Term) (tm : Term) (rec : Bool)
   | assert (tm : Term)
   | checkSat
@@ -58,13 +58,17 @@ protected def toSexp : Command → Sexp
     let sortDecls : List Sexp :=
       sorts.map fun (nm, ar) => sexp!{({quoteSymbol nm} {toString ar})}
     let dtypeDecls : List Sexp :=
-      dtypes.map fun ctors =>
+      dtypes.map fun (params, ctors) =>
         let ctorDecls : List Sexp :=
           ctors.map fun (ctorNm, fields) =>
             let flds : List Sexp :=
               fields.map fun (fnm, fsort) => sexp!{({quoteSymbol fnm} {fsort})}
             sexp!{({quoteSymbol ctorNm} ...{flds})}
-        sexp!{(...{ctorDecls})}
+        if params.isEmpty then
+          sexp!{(...{ctorDecls})}
+        else
+          let ps : List Sexp := params.map fun p => sexp!{{quoteSymbol p}}
+          sexp!{(par (...{ps}) (...{ctorDecls}))}
     sexp!{(declare-datatypes (...{sortDecls}) (...{dtypeDecls}))}
   | .defineSort nm ps tm          =>
     sexp!{(define-sort {quoteSymbol nm} (...{ps.map toSexp}) {tm})}
